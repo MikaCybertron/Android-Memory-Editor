@@ -27,7 +27,9 @@
 
 [[nodiscard]] std::optional<pid_t> FindPidByPackageName(std::string_view packageName);
 
-bool StopProcess(pid_t pid);
+bool IsProcessStopped(pid_t pid);
+
+bool FreezeProcess(pid_t pid);
 
 bool TryToResumeProsess(pid_t pid, int attempts);
 

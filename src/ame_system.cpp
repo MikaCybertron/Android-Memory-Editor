@@ -67,6 +67,10 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
     return result;
 }
 
+bool IsProcessStopped(pid_t pid) {
+    return true;
+}
+
 bool FreezeProcess(pid_t pid) {
     if (kill(pid, SIGSTOP) == -1) {
         logger.Error("Failed to send SIGSTOP to process {}", pid);
