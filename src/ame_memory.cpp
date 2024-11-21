@@ -3,31 +3,31 @@
  *
  * This file is part of Android-Memory-Editor.
  *
- * Android-Memory-Editor is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Android-Memory-Editor is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * Android-Memory-Editor is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Android-Memory-Editor is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include "ame_memory.h"
 
 #include <fstream>
 
-std::optional<AddrRangeList> RawGetAddrRange(const pid_t &pid, std::function<bool(std::string_view)> predicate) {
-    ShowInfo("Get Address Range Begin.");
+std::optional<AddrRangeList> RawGetAddrRange(pid_t pid, std::function<bool(std::string_view)> predicate) {
+    logger.Info("Get Address Range Begin.");
     char filename[32];
     snprintf(filename, sizeof(filename), "/proc/%d/maps", pid);
     std::fstream file(filename, std::ios::in);
     if (!file.is_open()) {
-        ShowError("Get Address Range Failed.");
+        logger.Error("Get Address Range Failed.");
         return std::nullopt;
     }
     std::string str;
@@ -37,18 +37,18 @@ std::optional<AddrRangeList> RawGetAddrRange(const pid_t &pid, std::function<boo
         std::getline(file, str);
         if (str.find("rw") != std::string::npos && predicate(str)) {
             if (sscanf(str.c_str(), "%ld-%ld", &beginAddr, &endAddr) != EOF) {
-                addrRangeList.push_back({beginAddr, endAddr});
+                addrRangeList.push_front({beginAddr, endAddr});
             } else {
-                ShowError("Error Get Address Range: {}", strerror(errno));
+                logger.Error("Error Get Address Range: {}", strerror(errno));
             }
         }
     }
     file.close();
-    ShowInfo("Get Address Range End.");
+    logger.Info("Get Address Range End.");
     return addrRangeList;
 }
 
-std::optional<AddrRangeList> GetAddrRange(const pid_t &pid, MemoryZone zone) {
+std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemoryZone zone) {
     switch (zone) {
         case MemoryZone::ALL: {
             return RawGetAddrRange(pid, [](std::string_view) { return true; });
@@ -87,7 +87,7 @@ std::optional<AddrRangeList> GetAddrRange(const pid_t &pid, MemoryZone zone) {
             return RawGetAddrRange(pid, [](std::string_view str) { return str.find("/dev/kgsl-3d0") != std::string::npos; });
         }
         default: {
-            ShowError("Unexpected Case For MemoryZone: {}", static_cast<int>(zone));
+            logger.Error("Unexpected Case For MemoryZone: {}", static_cast<int>(zone));
             return std::nullopt;
         }
     }

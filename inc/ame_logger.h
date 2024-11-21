@@ -3,18 +3,18 @@
  *
  * This file is part of Android-Memory-Editor.
  *
- * Android-Memory-Editor is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * Android-Memory-Editor is free software: you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
  *
- * Android-Memory-Editor is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * Android-Memory-Editor is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY
+ * or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ * more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef __INC_AME_LOGGER_H__
@@ -27,22 +27,43 @@
 #include <iostream>
 #include <string_view>
 
-inline void ShowInfo(std::string_view message) noexcept {
-    std::cout << "[INFO] " << message << std::endl;
-}
+enum class LogLevel {
+    INFO,
+    DEBUG,
+    WARNING,
+    ERROR,
+};
 
-inline void ShowError(std::string_view message) noexcept {
-    std::cerr << "[ERROR] " << message << std::endl;
-}
+class Logger {
+public:
+    void Debug(std::string_view message) noexcept { std::clog << "[DEBUG] " << message << std::endl; }
 
-template <class... Types>
-void ShowInfo(const std::format_string<Types...> format, Types &&...args) {
-    std::cout << "[INFO] " << std::vformat(format.get(), std::make_format_args(args...)) << std::endl;
-}
+    void Info(std::string_view message) noexcept { std::cout << "[INFO] " << message << std::endl; }
 
-template <class... Types>
-void ShowError(const std::format_string<Types...> format, Types &&...args) {
-    std::cerr << "[ERROR] " << std::vformat(format.get(), std::make_format_args(args...)) << std::endl;
-}
+    void Warning(std::string_view message) noexcept { std::cout << "[WARNING] " << message << std::endl; }
+
+    void Error(std::string_view message) noexcept { std::cerr << "[ERROR] " << message << std::endl; }
+
+    template <class... Types>
+    void Debug(const std::format_string<Types...> format, Types &&...args) {
+        Debug(std::vformat(format.get(), std::make_format_args(args...)));
+    }
+
+    template <class... Types>
+    void Info(const std::format_string<Types...> format, Types &&...args) {
+        Info(std::vformat(format.get(), std::make_format_args(args...)));
+    }
+
+    template <class... Types>
+    void Warning(const std::format_string<Types...> format, Types &&...args) {
+        Warning(std::vformat(format.get(), std::make_format_args(args...)));
+    }
+
+    template <class... Types>
+    void Error(const std::format_string<Types...> format, Types &&...args) {
+        Error(std::vformat(format.get(), std::make_format_args(args...)));
+    }
+
+} inline logger;
 
 #endif // __INC_AME_LOGGER_H__
