@@ -36,13 +36,30 @@ enum class LogLevel {
 
 class Logger {
 public:
-    void Debug(std::string_view message) noexcept { std::clog << "[DEBUG] " << message << std::endl; }
+    void Debug(std::string_view message) noexcept {
+        std::clog << "\033[32m"                  // green
+                  << "[DEBUG]" << " " << message //
+                  << "\033[39m"                  // default color
+                  << std::endl;
+    }
 
-    void Info(std::string_view message) noexcept { std::cout << "[INFO] " << message << std::endl; }
+    void Info(std::string_view message) noexcept {
+        std::cout << "[INFO]" << " " << message << std::endl;
+    }
 
-    void Warning(std::string_view message) noexcept { std::cout << "[WARNING] " << message << std::endl; }
+    void Warning(std::string_view message) noexcept {
+        std::cout << "\033[33m"                    // yellow
+                  << "[WARNING]" << " " << message //
+                  << "\033[39m"                    // default color
+                  << std::endl;
+    }
 
-    void Error(std::string_view message) noexcept { std::cerr << "[ERROR] " << message << std::endl; }
+    void Error(std::string_view message) noexcept {
+        std::cerr << "\033[31m"                  // red
+                  << "[ERROR]" << " " << message //
+                  << "\033[39m"                  // default color
+                  << std::endl;
+    }
 
     template <class... Types>
     void Debug(const std::format_string<Types...> format, Types &&...args) {

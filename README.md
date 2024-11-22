@@ -10,7 +10,7 @@ A simple memory read/write program for Android.
 
 - [Android-Mem-Edit](https://github.com/mrcang09/Android-Mem-Edit)
 
-- [scanmem](https://github.com/scanmem/scanmem)
+<!-- - [scanmem](https://github.com/scanmem/scanmem) -->
 
 ## License
 

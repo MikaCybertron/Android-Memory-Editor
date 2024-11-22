@@ -22,11 +22,33 @@
 #include "ame_system.h"
 
 int main() {
-    auto pid = FindPidByPackageName("com.popcap.pvz_na");
-    if (pid.has_value()) {
-        logger.Info("pid of pvz: {}", *pid);
-    } else {
-        logger.Info("pvz not find.");
+    std::string packageName = "com.popcap.pvz_na";
+    auto pidOp = FindPidByPackageName(packageName);
+    if (!pidOp.has_value()) {
+        logger.Info("pid of {} not find.", packageName);
+        return 0;
     }
+    pid_t pid = *pidOp;
+    logger.Info("pid of {}: {}", packageName, pid);
+
+    // Test
+    logger.Info("[1] Freeze Process");
+    logger.Info("[2] Resume Prosess");
+    logger.Info("[3] Exit");
+    std::string input;
+    while (true) {
+        logger.Info("Enter an option in [1, 2, 3]");
+        std::cin >> input;
+        if (input == "1") {
+            FreezeProcess(pid);
+        } else if (input == "2") {
+            TryToResumeProsess(pid);
+        } else if (input == "3") {
+            break;
+        } else {
+            logger.Info("Wrong option.");
+        }
+    }
+
     return 0;
 }

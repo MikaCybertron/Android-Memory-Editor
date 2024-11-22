@@ -27,10 +27,10 @@
 
 [[nodiscard]] std::optional<pid_t> FindPidByPackageName(std::string_view packageName);
 
-bool IsProcessStopped(pid_t pid);
+[[nodiscard]] std::optional<bool> IsProcessStopped(pid_t pid);
 
 bool FreezeProcess(pid_t pid);
 
-bool TryToResumeProsess(pid_t pid, int attempts);
+bool TryToResumeProsess(pid_t pid, int attempts = 3);
 
 #endif // __INC_AME_SYSTEM_H__
