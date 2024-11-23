@@ -318,6 +318,8 @@ int WriteMeory(pid_t pid, const AddrList &addrList, const T &&value, int groupSi
             break;
         }
     }
+
+    close(memFile);
     return successCount;
 }
 
