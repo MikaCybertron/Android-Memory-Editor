@@ -64,9 +64,9 @@ std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
             });
         }
         case MemoryZone::ASHMEM: {
-            return GetAddrRange(pid, [](std::string_view str) {        //
-                return (str.find("/dev/ashmem/") != std::string::npos) //
-                    && (str.find("dalvik") == std::string::npos);
+            return GetAddrRange(pid, [](std::string_view str) {      //
+                return str.find("/dev/ashmem/") != std::string::npos //
+                    && str.find("dalvik") == std::string::npos;
             });
         }
         case MemoryZone::A_ANONMYOURS: {

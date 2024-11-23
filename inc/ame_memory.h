@@ -301,7 +301,7 @@ int WriteMeory(pid_t pid, const AddrList &addrList, const T &&value, int groupSi
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    int memFile = open(memPath.c_str(), O_RDONLY);
+    int memFile = open(memPath.c_str(), O_WRONLY);
     if (memFile == -1) {
         logger.Error("Failed to write meory: failed to open {}", memPath);
         return 0;
