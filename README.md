@@ -10,6 +10,8 @@ A simple memory read/write program for Android.
 
 - [Android-Mem-Edit](https://github.com/mrcang09/Android-Mem-Edit)
 
+- [process_helper](https://gitee.com/liudegui/process_helper)
+
 <!-- - [scanmem](https://github.com/scanmem/scanmem) -->
 
 ## License

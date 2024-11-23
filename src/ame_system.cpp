@@ -32,6 +32,7 @@
 #include <optional>
 #include <regex>
 #include <string>
+#include <string_view>
 
 std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
     DIR *dirp = opendir("/proc");
@@ -112,9 +113,10 @@ bool FreezeProcess(pid_t pid) {
     if (*isStopped) {
         logger.Debug("Process {} froze successfully.", pid);
         return true;
+    } else {
+        logger.Error("Failed to freeze process {}.", pid);
+        return false;
     }
-    logger.Debug("Failed to freeze process {}.", pid);
-    return false;
 }
 
 bool TryToResumeProsess(pid_t pid, int attempts) {
@@ -122,9 +124,9 @@ bool TryToResumeProsess(pid_t pid, int attempts) {
         logger.Error("attempts less than one: {}.", attempts);
         return false;
     }
-    for (int i = 1, j = 0; i <= attempts; ++i) {
+    for (int i = 0, j = 0; i < attempts; ++i) {
         if (kill(pid, SIGCONT) == -1) {
-            logger.Debug("Failed to send SIGCONT to process {} for {} time.", pid, ++j);
+            logger.Error("Failed to send SIGCONT to process {} for {} time.", pid, ++j);
             continue;
         }
         usleep(1000); // sleep 1ms, wait for process status

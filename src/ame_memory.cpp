@@ -18,75 +18,108 @@
  */
 
 #include "ame_memory.h"
+#include "ame_logger.h"
 
+#include <sys/types.h>
+
+#include <cstdint>
+
+#include <format>
 #include <fstream>
+#include <functional>
+#include <optional>
+#include <string>
+#include <string_view>
 
-std::optional<AddrRangeList> RawGetAddrRange(pid_t pid, std::function<bool(std::string_view)> predicate) {
-    logger.Info("Get Address Range Begin.");
-    char filename[32];
-    snprintf(filename, sizeof(filename), "/proc/%d/maps", pid);
-    std::fstream file(filename, std::ios::in);
-    if (!file.is_open()) {
-        logger.Error("Get Address Range Failed.");
+std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(std::string_view)> predicate) {
+    logger.Debug("Get address range start.");
+    std::string mapsPath = std::format("/proc/{}/maps", pid);
+    std::ifstream mapsFile(mapsPath);
+    if (!mapsFile.is_open()) {
+        logger.Error("Failed to open: {}:", mapsPath);
         return std::nullopt;
     }
-    std::string str;
-    uintptr_t beginAddr, endAddr;
+    std::string line;
+    uint64_t beginAddr, endAddr;
     AddrRangeList addrRangeList;
-    while (!file.eof()) {
-        std::getline(file, str);
-        if (str.find("rw") != std::string::npos && predicate(str)) {
-            if (sscanf(str.c_str(), "%ld-%ld", &beginAddr, &endAddr) != EOF) {
-                addrRangeList.push_front({beginAddr, endAddr});
+    while (std::getline(mapsFile, line)) {
+        if (line.find("rw") != std::string::npos && predicate(line)) {
+            if (sscanf(line.c_str(), "%lx-%lx", &beginAddr, &endAddr) == EOF) {
+                logger.Error("Failed to get address range: {}", strerror(errno));
             } else {
-                logger.Error("Error Get Address Range: {}", strerror(errno));
+                addrRangeList.push_front({beginAddr, endAddr});
             }
         }
     }
-    file.close();
-    logger.Info("Get Address Range End.");
+    mapsFile.close();
+    logger.Debug("Get address range end.");
     return addrRangeList;
 }
 
-std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemoryZone zone) {
+std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
     switch (zone) {
         case MemoryZone::ALL: {
-            return RawGetAddrRange(pid, [](std::string_view) { return true; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return true;
+            });
         }
         case MemoryZone::ASHMEM: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return (str.find("/dev/ashmem/") != std::string::npos) && (str.find("dalvik") == std::string::npos); });
+            return GetAddrRange(pid, [](std::string_view str) {        //
+                return (str.find("/dev/ashmem/") != std::string::npos) //
+                    && (str.find("dalvik") == std::string::npos);
+            });
         }
         case MemoryZone::A_ANONMYOURS: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.size() < 42; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.length() < 42;
+            });
         }
         case MemoryZone::B_BAD: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("/system/fonts") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("/system/fonts") != std::string::npos;
+            });
         }
         case MemoryZone::CODE_SYSTEM: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("/system") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("/system") != std::string::npos;
+            });
         }
         case MemoryZone::C_ALLOC: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("[anon:libc_malloc]") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("[anon:libc_malloc]") != std::string::npos;
+            });
         }
         case MemoryZone::C_BSS: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("[anon:.bss]") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("[anon:.bss]") != std::string::npos;
+            });
         }
         case MemoryZone::C_DATA: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("/data/") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("/data/") != std::string::npos;
+            });
         }
         case MemoryZone::C_HEAP: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("[heap]") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("[heap]") != std::string::npos;
+            });
         }
         case MemoryZone::JAVA_HEAP: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("/dev/ashmem/") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("/dev/ashmem/") != std::string::npos;
+            });
         }
         case MemoryZone::STACK: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("[stack]") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("[stack]") != std::string::npos;
+            });
         }
         case MemoryZone::V: {
-            return RawGetAddrRange(pid, [](std::string_view str) { return str.find("/dev/kgsl-3d0") != std::string::npos; });
+            return GetAddrRange(pid, [](std::string_view str) { //
+                return str.find("/dev/kgsl-3d0") != std::string::npos;
+            });
         }
-        default: {
+        [[unlikely]] default: {
             logger.Error("Unexpected Case For MemoryZone: {}", static_cast<int>(zone));
             return std::nullopt;
         }

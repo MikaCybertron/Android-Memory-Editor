@@ -31,13 +31,14 @@
 
 #include <forward_list>
 #include <functional>
-#include <memory>
+#include <optional>
+#include <string_view>
 #include <type_traits>
+#include <vector>
 
-using AddrRangeList = std::forward_list<std::pair<uintptr_t, uintptr_t>>;
-using AddrList = std::forward_list<uintptr_t>;
-
-inline constexpr int BUFF_SIZE = 256;
+// uint64_t rather than uintptr_t
+using AddrRangeList = std::forward_list<std::pair<uint64_t, uint64_t>>;
+using AddrList = std::forward_list<uint64_t>;
 
 // 内存区域
 enum class MemoryZone {
@@ -55,201 +56,265 @@ enum class MemoryZone {
     V,            // v内存
 };
 
-[[nodiscard]] std::optional<AddrRangeList> RawGetAddrRange(pid_t pid, std::function<bool(std::string_view)> predicate);
+[[nodiscard]] std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(std::string_view)> predicate);
 
-[[nodiscard]] std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemoryZone zone);
+[[nodiscard]] std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone);
+
 
 /**
- * @brief Search in zone for addresses that *addaess == value.
+ * @brief Find addresses that *address == value.
+ * @tparam T  base data type, e.g. short, int, float, long.
  */
 template <typename T>
-    requires std::is_arithmetic_v<T> // "T" must be the base data type, e.g. short, int, float.
-[[nodiscard]] std::optional<AddrList> PreSearch(pid_t pid, MemoryZone zone, const T &&value) {
-    auto addrRangeList = GetAddrRange(pid, zone);
+    requires std::is_arithmetic_v<T>
+[[nodiscard]] std::optional<AddrList> FindAddress(pid_t pid, MemoryZone zone, const T &&valueToFind) {
+    auto addrRangeList = GetAddrRangeByZone(pid, zone);
     if (!addrRangeList.has_value()) {
-        logger.Error("Get Address Range Failed.");
+        logger.Error("Failed to find address: failed to get address range.");
         return std::nullopt;
     }
-    char filename[32];
-    snprintf(filename, sizeof(filename), "/proc/%d/mem", pid);
-    int fd = open(filename, O_RDONLY);
-    if (fd == -1) {
-        logger.Error("Search Faild.");
+
+    std::string memPath = std::format("/proc/{}/mem", pid);
+    int memFile = open(memPath.c_str(), O_RDONLY);
+    if (memFile == -1) {
+        logger.Error("Failed to find address: failed to open {}", memPath);
         return std::nullopt;
     }
-    logger.Info("Search Value Begin: ()", value);
+
+    logger.Debug("Find address by value of {} start.", valueToFind);
     AddrList addrList;
-    auto buff = std::make_unique<T[]>(BUFF_SIZE);
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
-        for (uintptr_t addr = beginAddr; addr <= endAddr; addr += 0x4) { // I don't know if "0x4" could be other value.
-            memset(buff, 0, sizeof(T));
-            ssize_t readResult = pread64(fd, buff, sizeof(T), addr);
-            if (readResult == -1) {
-                // logger.Error("Pread Failed.");
+        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int)) {
+            T value = 0;
+            if (pread64(memFile, &value, sizeof(T), address) <= 0) {
+                // logger.Error("pread failed.");
                 continue;
             }
-            if (buff[0] != value) {
-                continue;
+            if (value == valueToFind) {
+                // logger.Debug("Find Address: 0x{:X}", address);
+                addrList.push_front(address);
             }
-            logger.Info("Find Address: 0x{:X}", addr);
-            addrList.push_front(addr);
         }
     }
-    close(fd);
+    logger.Debug("Find address end.");
+
+    close(memFile);
     return addrList;
 };
 
+
 /**
- * @brief Search in zone for addresses that minValue <= *addaess <= maxValue.
+ * @brief Find addresses that minValue <= *address <= maxValue.
+ * @tparam T  base data type, e.g. short, int, float, long.
  */
 template <typename T>
-    requires std::is_arithmetic_v<T> // "T" must be the base data type, e.g. short, int, float.
-[[nodiscard]] std::optional<AddrList> PreSearch(pid_t pid, MemoryZone zone, const T &&minValue, const T &&maxValue) {
+    requires std::is_arithmetic_v<T>
+[[nodiscard]] std::optional<AddrList> FindAddressByRange(pid_t pid, MemoryZone zone, const T &&minValue, const T &&maxValue) {
     if (minValue > maxValue) {
-        logger.Error("Search No Start: minValue > maxValue. ({}, {})", minValue, maxValue);
+        logger.Error("Failed to find address: minValue > maxValue. ({}, {})", minValue, maxValue);
         return std::nullopt;
     }
-    auto addrRangeList = GetAddrRange(pid, zone);
+
+    auto addrRangeList = GetAddrRangeByZone(pid, zone);
     if (!addrRangeList.has_value()) {
-        logger.Error("Get Address Range Failed.");
+        logger.Error("Failed to find address: failed to get address range.");
         return std::nullopt;
     }
-    char filename[32];
-    snprintf(filename, sizeof(filename), "/proc/%d/mem", pid);
-    int fd = open(filename, O_RDONLY);
-    if (fd == -1) {
-        logger.Error("Search Faild.");
+
+    std::string memPath = std::format("/proc/{}/mem", pid);
+    int memFile = open(memPath.c_str(), O_RDONLY);
+    if (memFile == -1) {
+        logger.Error("Failed to find address: failed to open {}", memPath);
         return std::nullopt;
     }
-    logger.Info("Search Value In Range Begin: ({}, {})", minValue, maxValue);
+
+    logger.Debug("Find address by value in ({}, {}) start.", minValue, maxValue);
     AddrList addrList;
-    auto buff = std::make_unique<T[]>(BUFF_SIZE);
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
-        for (uintptr_t addr = beginAddr; addr <= endAddr; addr += 0x4) { // I don't know if "0x4" could be other value.
-            memset(buff, 0, sizeof(T));
-            ssize_t readResult = pread64(fd, buff, sizeof(T), addr);
-            if (readResult == -1) {
-                // logger.Error("Pread Failed.");
+        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int)) {
+            T value = 0;
+            if (pread64(memFile, &value, sizeof(T), address) <= 0) {
+                // logger.Error("pread failed.");
                 continue;
             }
-            if (buff[0] < minValue || maxValue < buff[0]) {
-                continue;
+            if (minValue <= value && value <= maxValue) {
+                // logger.Debug("Find Address: 0x{:X}", address);
+                addrList.push_front(address);
             }
-            logger.Info("Find Address: 0x{:X}", addr);
-            addrList.push_front(addr);
         }
     }
-    close(fd);
+    logger.Debug("Find address end.");
+
+    close(memFile);
     return addrList;
 };
 
-/**
- * @brief Search the targetAddrList for addresses that *addaess == value.
- */
-template <typename T>
-    requires std::is_arithmetic_v<T> // "T" must be the base data type, e.g. short, int, float.
-[[nodiscard]] std::optional<AddrList> Search(const AddrList &targetAddrList, const T &&value) {
-    return SearchByOffset(targetAddrList, value, 0);
-};
 
 /**
- * @brief Search the targetAddrList for addresses that *(addaess + offset) == value.
+ * @brief Find addresses with a group of values.
+ * @tparam T  base data type, e.g. short, int, float, long.
+ *
+ * A bit slow.
  */
 template <typename T>
-    requires std::is_arithmetic_v<T> // "T" must be the base data type, e.g. short, int, float.
-[[nodiscard]] std::optional<AddrList> SearchByOffset(pid_t pid, const AddrList &targetAddrList, const T &&value, const uintptr_t offset) {
-    char filename[32];
-    snprintf(filename, sizeof(filename), "/proc/%d/mem", pid);
-    int fd = open(filename, O_RDONLY);
-    if (fd == -1) {
-        logger.Error("Search Faild.");
+    requires std::is_arithmetic_v<T>
+[[nodiscard]] std::optional<AddrList> FindArrayAddress(pid_t pid, MemoryZone zone, const std::vector<T> &&items) {
+    if (items.empty()) {
+        logger.Error("Failed to find address: items is empty.");
         return std::nullopt;
     }
-    logger.Info("Search Value Begin: ()", value);
-    AddrList resultAddrList;
-    auto buff = std::make_unique<T[]>(BUFF_SIZE);
-    for (const auto &addr : targetAddrList) {
-        memset(buff, 0, sizeof(T));
-        ssize_t readResult = pread64(fd, buff, sizeof(T), addr + offset);
-        if (readResult == -1) {
-            // logger.Error("Pread Failed.");
-            continue;
-        }
-        if (buff[0] != value) {
-            continue;
-        }
-        logger.Info("Find Address: 0x{:X}", addr);
-        resultAddrList.push_front(addr);
+
+    auto addrRangeList = GetAddrRangeByZone(pid, zone);
+    if (!addrRangeList.has_value()) {
+        logger.Error("Failed to find address: failed to get address range.");
+        return std::nullopt;
     }
-    close(fd);
-    return resultAddrList;
+
+    std::string memPath = std::format("/proc/{}/mem", pid);
+    int memFile = open(memPath.c_str(), O_RDONLY);
+    if (memFile == -1) {
+        logger.Error("Failed to find address: failed to open {}", memPath);
+        return std::nullopt;
+    }
+
+    logger.Debug("Find address with group of values start.");
+    AddrList addrList;
+    for (const auto &[beginAddr, endAddr] : *addrRangeList) {
+        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int)) {
+            bool flag = true;
+            for (size_t i = 0; i < items.size(); ++i) {
+                T value = 0;
+                if (pread64(memFile, &value, sizeof(T), address + sizeof(T) * i) <= 0 || value != items[i]) {
+                    flag = false;
+                    break;
+                }
+            }
+            if (flag) {
+                addrList.push_front(address);
+            }
+        }
+    }
+    logger.Debug("Find address end.");
+
+    close(memFile);
+    return addrList;
 };
 
+
 /**
- * @brief Search the targetAddrList for addresses that minValue <= *addaess <= maxValue.
+ * @brief Find addresses in list that *(address + offset) == value.
+ * @tparam T  base data type, e.g. short, int, float, long.
  */
 template <typename T>
-    requires std::is_arithmetic_v<T> // "T" must be the base data type, e.g. short, int, float.
-[[nodiscard]] std::optional<AddrList> Search(pid_t pid, const AddrList &targetAddrList, const T &&minValue, const T &&maxValue) {
+    requires std::is_arithmetic_v<T>
+[[nodiscard]] std::optional<AddrList> FilterAddrListByOffset(pid_t pid, const AddrList &&listToFilter, const T &&valueToFind, intptr_t offset) {
+    std::string memPath = std::format("/proc/{}/mem", pid);
+    int memFile = open(memPath.c_str(), O_RDONLY);
+    if (memFile == -1) {
+        logger.Error("Failed to filter address: failed to open {}", memPath);
+        return std::nullopt;
+    }
+
+    logger.Debug("Filter address by value of {} and offset of {} start.", valueToFind, offset);
+    AddrList listToReturn;
+    for (const auto &address : listToFilter) {
+        T value = 0;
+        if (pread64(memFile, &value, sizeof(T), address + offset) <= 0) {
+            // logger.Error("pread failed.");
+            continue;
+        }
+        if (value == valueToFind) {
+            // logger.Debug("Find Address: 0x{:X}", address);
+            listToReturn.push_front(address);
+        }
+    }
+    logger.Debug("Filter address end.");
+
+    close(memFile);
+    return listToReturn;
+};
+
+
+/**
+ * @brief Find addresses in list that *address == value.
+ * @tparam T  base data type, e.g. short, int, float, long.
+ */
+template <typename T>
+    requires std::is_arithmetic_v<T>
+[[nodiscard]] std::optional<AddrList> FilterAddrList(pid_t pid, const AddrList &&targetAddrList, const T &&value) {
+    return FilterAddrListByOffset(pid, targetAddrList, value, 0);
+};
+
+
+/**
+ * @brief Find addresses in list that minValue <= *address <= maxValue.
+ * @tparam T  base data type, e.g. short, int, float, long.
+ */
+template <typename T>
+    requires std::is_arithmetic_v<T>
+[[nodiscard]] std::optional<AddrList> FilterAddrListByRange(pid_t pid, const AddrList &listToFilter, const T &&minValue, const T &&maxValue) {
     if (minValue > maxValue) {
-        logger.Error("Search No Start: minValue > maxValue. ({}, {})", minValue, maxValue);
+        logger.Error("Failed to filter address: minValue > maxValue. ({}, {})", minValue, maxValue);
         return std::nullopt;
     }
-    char filename[32];
-    snprintf(filename, sizeof(filename), "/proc/%d/mem", pid);
-    int fd = open(filename, O_RDONLY);
-    if (fd == -1) {
-        logger.Error("Search Faild.");
+
+    std::string memPath = std::format("/proc/{}/mem", pid);
+    int memFile = open(memPath.c_str(), O_RDONLY);
+    if (memFile == -1) {
+        logger.Error("Failed to filter address: failed to open {}", memPath);
         return std::nullopt;
     }
-    logger.Info("Search Value In Range Begin: ({}, {})", minValue, maxValue);
-    AddrList resultAddrList;
-    auto buff = std::make_unique<T[]>(BUFF_SIZE);
-    for (const auto &addr : targetAddrList) {
-        memset(buff, 0, sizeof(T));
-        ssize_t readResult = pread64(fd, buff, sizeof(T), addr);
-        if (readResult == -1) {
-            // logger.Error("Pread Failed.");
+
+    logger.Debug("Filter address by value in ({}, {}) start.", minValue, maxValue);
+    AddrList listToReturn;
+    for (const auto &address : listToFilter) {
+        T value = 0;
+        if (pread64(memFile, &value, sizeof(T), address) <= 0) {
+            // logger.Error("pread failed.");
             continue;
         }
-        if (buff[0] < minValue || maxValue < buff[0]) {
-            continue;
+        if (minValue <= value && value <= maxValue) {
+            // logger.Debug("Find Address: 0x{:X}", address);
+            listToReturn.push_front(address);
         }
-        logger.Info("Find Address: 0x{:X}", addr);
-        resultAddrList.push_front(addr);
     }
-    close(fd);
-    return resultAddrList;
+    logger.Debug("Filter address end.");
+
+    close(memFile);
+    return listToReturn;
 };
+
 
 /**
  * @brief Write the value to the addresses in addrList.
  *
- * @param addrCount The number of addresses to be written.
- * @return The number of successful writes.
+ * @tparam T  base data type, e.g. short, int, float, long.
+ * @param groupSize  The number of addresses to be written.
+ * @return Count of successful writes.
  */
 template <typename T>
-    requires std::is_arithmetic_v<T> // "T" must be the base data type, e.g. short, int, float.
-int WriteMeory(pid_t pid, const AddrList &addrList, const T &&value, const int &addrCount) {
-    if (addrCount <= 0) {
-        logger.Error("Address Count Could Not Less Than One: {}", addrCount);
+    requires std::is_arithmetic_v<T>
+int WriteMeory(pid_t pid, const AddrList &addrList, const T &&value, int groupSize = 1) {
+    if (groupSize <= 0) {
+        logger.Error("Group size could not less than one: {}.", groupSize);
         return 0;
     }
-    char filename[32];
-    snprintf(filename, sizeof(filename), "/proc/%d/mem", pid);
-    int fd = open(filename, O_WRONLY);
-    if (fd == -1) {
-        logger.Error("Search Faild.");
+
+    std::string memPath = std::format("/proc/{}/mem", pid);
+    int memFile = open(memPath.c_str(), O_RDONLY);
+    if (memFile == -1) {
+        logger.Error("Failed to write meory: failed to open {}", memPath);
         return 0;
     }
-    int successCount = 0, i = 1;
-    for (const auto &addr : addrList) {
-        if (pwrite64(fd, &value, sizeof(T), addr) != -1) {
+
+    int i = 1, successCount = 0;
+    for (const auto &address : addrList) {
+        if (pwrite64(memFile, &value, sizeof(T), address) > 0) {
             ++successCount;
         } else {
-            logger.Error("The i-th Write Failed: {}", i);
+            logger.Error("The {} times write failed.", i);
         }
-        if (++i > addrCount) {
+        if (++i > groupSize) {
             break;
         }
     }
