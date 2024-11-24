@@ -17,8 +17,8 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __INC_AME_SYSTEM_H__
-#define __INC_AME_SYSTEM_H__
+#ifndef __INC_AME_PROCESS_H__
+#define __INC_AME_PROCESS_H__
 
 #include <sys/types.h>
 
@@ -29,8 +29,8 @@
 
 [[nodiscard]] std::optional<bool> IsProcessStopped(pid_t pid);
 
-bool FreezeProcess(pid_t pid);
+bool FreezeProcessByPid(pid_t pid);
 
-bool TryToResumeProsess(pid_t pid, int attempts = 3);
+bool TryToResumeProsessByPid(pid_t pid, int attempts = 3);
 
-#endif // __INC_AME_SYSTEM_H__
+#endif // __INC_AME_PROCESS_H__

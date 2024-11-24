@@ -84,7 +84,7 @@ template <typename T>
     logger.Debug("Find address by value of {} start.", valueToFind);
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
-        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int)) {
+        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             T value = 0;
             if (pread64(memFile, &value, sizeof(T), address) <= 0) {
                 // logger.Error("pread failed.");
@@ -131,7 +131,7 @@ template <typename T>
     logger.Debug("Find address by value in ({}, {}) start.", minValue, maxValue);
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
-        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int)) {
+        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             T value = 0;
             if (pread64(memFile, &value, sizeof(T), address) <= 0) {
                 // logger.Error("pread failed.");
@@ -153,8 +153,6 @@ template <typename T>
 /**
  * @brief Find addresses with a group of values.
  * @tparam T  base data type, e.g. short, int, float, long.
- *
- * A bit slow.
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
@@ -180,7 +178,7 @@ template <typename T>
     logger.Debug("Find address with group of values start.");
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
-        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int)) {
+        for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             bool flag = true;
             for (size_t i = 0; i < items.size(); ++i) {
                 T value = 0;
@@ -207,7 +205,7 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FilterAddrListByOffset(pid_t pid, const AddrList &&listToFilter, const T &&valueToFind, intptr_t offset) {
+[[nodiscard]] std::optional<AddrList> FilterAddrListByOffset(pid_t pid, const AddrList &&listToFilter, const T &&valueToFind, int64_t offset) {
     std::string memPath = std::format("/proc/{}/mem", pid);
     int memFile = open(memPath.c_str(), O_RDONLY);
     if (memFile == -1) {
@@ -241,8 +239,8 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FilterAddrList(pid_t pid, const AddrList &&targetAddrList, const T &&value) {
-    return FilterAddrListByOffset(pid, targetAddrList, value, 0);
+[[nodiscard]] std::optional<AddrList> FilterAddrList(pid_t pid, const AddrList &&listToFilter, const T &&value) {
+    return FilterAddrListByOffset(pid, listToFilter, value, 0);
 };
 
 
@@ -294,9 +292,9 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-int WriteMeory(pid_t pid, const AddrList &addrList, const T &&value, int groupSize = 1) {
+int WriteMeory(pid_t pid, const AddrList &&addrList, const T &&value, int groupSize = 1) {
     if (groupSize <= 0) {
-        logger.Error("Group size could not less than one: {}.", groupSize);
+        logger.Error("Failed to write meory: group size {} less than one.", groupSize);
         return 0;
     }
 

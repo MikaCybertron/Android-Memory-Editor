@@ -17,7 +17,7 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "ame_system.h"
+#include "ame_process.h"
 #include "ame_logger.h"
 
 #include <dirent.h>
@@ -98,7 +98,7 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
     return std::nullopt;
 }
 
-bool FreezeProcess(pid_t pid) {
+bool FreezeProcessByPid(pid_t pid) {
     if (kill(pid, SIGSTOP) == -1) {
         logger.Error("Failed to send SIGSTOP to process {}.", pid);
         return false;
@@ -119,7 +119,7 @@ bool FreezeProcess(pid_t pid) {
     }
 }
 
-bool TryToResumeProsess(pid_t pid, int attempts) {
+bool TryToResumeProsessByPid(pid_t pid, int attempts) {
     if (attempts < 1) {
         logger.Error("attempts less than one: {}.", attempts);
         return false;

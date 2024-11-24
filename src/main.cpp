@@ -19,7 +19,7 @@
 
 #include "ame_logger.h"
 #include "ame_memory.h"
-#include "ame_system.h"
+#include "ame_process.h"
 
 int main() {
     std::string packageName = "com.popcap.pvz_na";
@@ -40,9 +40,9 @@ int main() {
         logger.Info("Enter an option in [1, 2, 3]");
         std::cin >> input;
         if (input == "1") {
-            FreezeProcess(pid);
+            FreezeProcessByPid(pid);
         } else if (input == "2") {
-            TryToResumeProsess(pid);
+            TryToResumeProsessByPid(pid);
         } else if (input == "3") {
             break;
         } else {
@@ -50,8 +50,8 @@ int main() {
         }
     } */
 
-    FreezeProcess(pid);
-    auto listOp = FindArrayAddress<int>(pid,
+    FreezeProcessByPid(pid);
+    auto listOp = FindArrayAddress<int32_t>(pid,
                                         MemoryZone::A_ANONMYOURS,
                                         /* the density of fog in each cell */
                                         {
@@ -64,7 +64,7 @@ int main() {
     } else {
         logger.Warning("Fog address not find.");
     }
-    TryToResumeProsess(pid);
+    TryToResumeProsessByPid(pid);
 
     return 0;
 }

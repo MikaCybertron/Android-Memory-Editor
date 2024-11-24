@@ -40,15 +40,14 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(std::str
         return std::nullopt;
     }
     std::string line;
+    size_t index; // to skip character "-"
     uint64_t beginAddr, endAddr;
     AddrRangeList addrRangeList;
     while (std::getline(mapsFile, line)) {
         if (line.find("rw") != std::string::npos && predicate(line)) {
-            if (sscanf(line.c_str(), "%lx-%lx", &beginAddr, &endAddr) == EOF) {
-                logger.Error("Failed to get address range: {}", strerror(errno));
-            } else {
-                addrRangeList.push_front({beginAddr, endAddr});
-            }
+            beginAddr = std::stoull(line, &index, 16);
+            endAddr = std::stoull(line.substr(index + 1), nullptr, 16);
+            addrRangeList.push_front({beginAddr, endAddr});
         }
     }
     mapsFile.close();
