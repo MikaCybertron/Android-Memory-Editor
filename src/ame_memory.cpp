@@ -28,6 +28,7 @@
 #include <fstream>
 #include <functional>
 #include <optional>
+#include <sstream>
 #include <string>
 #include <string_view>
 
@@ -40,13 +41,14 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(std::str
         return std::nullopt;
     }
     std::string line;
-    size_t index; // to skip character "-"
+    std::istringstream lineStream;
     uint64_t beginAddr, endAddr;
     AddrRangeList addrRangeList;
     while (std::getline(mapsFile, line)) {
         if (line.find("rw") != std::string::npos && predicate(line)) {
-            beginAddr = std::stoull(line, &index, 16);
-            endAddr = std::stoull(line.substr(index + 1), nullptr, 16);
+            char tmpChar; // to skip character '-'
+            lineStream.str(line);
+            lineStream >> std::hex >> beginAddr >> tmpChar >> endAddr;
             addrRangeList.push_front({beginAddr, endAddr});
         }
     }

@@ -47,7 +47,7 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
             // not a directory
             continue;
         }
-        std::string pidStr = dp->d_name;
+        std::string_view pidStr = dp->d_name;
         if (pidStr.find_first_not_of("0123456789") != std::string::npos) {
             // not numeric name
             continue;
@@ -62,7 +62,7 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
         std::getline(cmdlineFile, cmdline, '\0');
         cmdlineFile.close();
         if (cmdline == packageName) {
-            result = std::stoi(pidStr);
+            result = atoi(pidStr.data());
             break;
         }
     }
@@ -121,7 +121,7 @@ bool FreezeProcessByPid(pid_t pid) {
 
 bool TryToResumeProsessByPid(pid_t pid, int attempts) {
     if (attempts < 1) {
-        logger.Error("attempts less than one: {}.", attempts);
+        logger.Error("Failed to resume prosess {}: attempts={} less than one.", pid, attempts);
         return false;
     }
     for (int i = 0, j = 0; i < attempts; ++i) {

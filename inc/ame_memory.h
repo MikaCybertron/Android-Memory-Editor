@@ -36,7 +36,7 @@
 #include <type_traits>
 #include <vector>
 
-// uint64_t rather than uintptr_t
+// uint64_t rather than uintptr_t/unsigned long/unsigned long long.
 using AddrRangeList = std::forward_list<std::pair<uint64_t, uint64_t>>;
 using AddrList = std::forward_list<uint64_t>;
 
@@ -250,7 +250,7 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FilterAddrListByRange(pid_t pid, const AddrList &listToFilter, const T &&minValue, const T &&maxValue) {
+[[nodiscard]] std::optional<AddrList> FilterAddrListByRange(pid_t pid, const AddrList &&listToFilter, const T &&minValue, const T &&maxValue) {
     if (minValue > maxValue) {
         logger.Error("Failed to filter address: minValue > maxValue. ({}, {})", minValue, maxValue);
         return std::nullopt;
@@ -293,8 +293,8 @@ template <typename T>
 template <typename T>
     requires std::is_arithmetic_v<T>
 int WriteMeory(pid_t pid, const AddrList &&addrList, const T &&value, int groupSize = 1) {
-    if (groupSize <= 0) {
-        logger.Error("Failed to write meory: group size {} less than one.", groupSize);
+    if (groupSize < 1) {
+        logger.Error("Failed to write meory: groupSize={} less than one.", groupSize);
         return 0;
     }
 
