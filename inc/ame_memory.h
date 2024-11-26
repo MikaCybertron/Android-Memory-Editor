@@ -151,7 +151,7 @@ template <typename T>
 
 
 /**
- * @brief Find addresses with a group of values.
+ * @brief Find addresses that *((T *)address) == items[0], *((T *)address + 1) == items[1], ...
  * @tparam T  base data type, e.g. short, int, float, long.
  */
 template <typename T>
@@ -287,12 +287,12 @@ template <typename T>
  * @brief Write the value to the addresses in addrList.
  *
  * @tparam T  base data type, e.g. short, int, float, long.
- * @param groupSize  The number of addresses to be written.
+ * @param [in] groupSize  The number of addresses to be written.
  * @return Count of successful writes.
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-int WriteMeory(pid_t pid, const AddrList &&addrList, const T &&value, int groupSize = 1) {
+int WriteAddressGroup(pid_t pid, const AddrList &&addrList, const T &&value, int groupSize = 1) {
     if (groupSize < 1) {
         logger.Error("Failed to write meory: groupSize={} less than one.", groupSize);
         return 0;
@@ -316,9 +316,43 @@ int WriteMeory(pid_t pid, const AddrList &&addrList, const T &&value, int groupS
             break;
         }
     }
-
     close(memFile);
     return successCount;
 }
+
+
+/**
+ * @brief Copy values of items to each "array" in addrList.
+ * @tparam T  base data type, e.g. short, int, float, long.
+ * @return Count of successful writes.
+ */
+template <typename T>
+    requires std::is_arithmetic_v<T>
+int WriteArrayAddress(pid_t pid, const AddrList &&addrList, const std::vector<T> &&items) {
+    if (items.empty()) {
+        logger.Error("Failed to write array address: items is empty.");
+        return 0;
+    }
+
+    std::string memPath = std::format("/proc/{}/mem", pid);
+    int memFile = open(memPath.c_str(), O_WRONLY);
+    if (memFile == -1) {
+        logger.Error("Failed to write array address: failed to open {}", memPath);
+        return 0;
+    }
+
+    int successCount = 0;
+    for (const auto &address : addrList) {
+        for (size_t i = 0; const auto &&value : items) {
+            if (pwrite64(memFile, &value, sizeof(T), address + sizeof(T) * i) > 0) {
+                ++successCount;
+            }
+            ++i;
+        }
+    }
+    close(memFile);
+    return successCount;
+};
+
 
 #endif // __INC_AME_MEMORY_H__

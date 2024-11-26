@@ -32,7 +32,7 @@ int main() {
     logger.Info("pid of {}: {}", packageName, pid);
 
     // Test
-    /* logger.Info("[1] Freeze Process");
+    logger.Info("[1] Freeze Process");
     logger.Info("[2] Resume Prosess");
     logger.Info("[3] Exit");
     std::string input;
@@ -46,25 +46,25 @@ int main() {
         } else if (input == "3") {
             break;
         } else {
-            logger.Info("Wrong option.");
+            logger.Info("Wrong option!");
         }
-    } */
-
-    FreezeProcessByPid(pid);
-    auto listOp = FindArrayAddress<int32_t>(pid,
-                                        MemoryZone::A_ANONMYOURS,
-                                        /* the density of fog in each cell */
-                                        {
-                                            200, 200, 200, 200, 200, 200, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-                                        });
-    if (listOp.has_value() && !listOp->empty()) {
-        for (const auto &address : *listOp) {
-            logger.Info("Fog address: 0x{:X}", address);
-        }
-    } else {
-        logger.Warning("Fog address not find.");
     }
-    TryToResumeProsessByPid(pid);
+
+    // FreezeProcessByPid(pid);
+    // auto listOp = FindArrayAddress<int32_t>(pid,
+    //                                     MemoryZone::A_ANONMYOURS,
+    //                                     /* the density of fog in each cell */
+    //                                     {
+    //                                         200, 200, 200, 200, 200, 200, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    //                                     });
+    // if (listOp.has_value() && !listOp->empty()) {
+    //     for (const auto &address : *listOp) {
+    //         logger.Info("Fog address: 0x{:X}", address);
+    //     }
+    // } else {
+    //     logger.Warning("Fog address not find.");
+    // }
+    // TryToResumeProsessByPid(pid);
 
     return 0;
 }

@@ -79,17 +79,17 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
     }
     std::string line;
     std::smatch matches;
-    std::regex stateRegex("^State:\\s+\\b(\\S+?)\\b\\s+\\((\\S+?)\\)");
+    std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((\S+?)\))re");
     while (getline(statusFile, line)) {
         if (!std::regex_search(line, matches, stateRegex)) {
             continue;
         }
-        std::string stateCode = matches[1].str();
+        std::string stateCode = matches.str(1);
         if (stateCode == "T") {
             logger.Debug("Process {} is in stopped state.", pid);
             return true;
         } else {
-            std::string state = matches[2].str();
+            std::string state = matches.str(2);
             logger.Debug("Process {} is not in stopped state: {} ({}).", pid, stateCode, state);
             return false;
         }
@@ -99,6 +99,10 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
 }
 
 bool FreezeProcessByPid(pid_t pid) {
+    if (getuid() != 0) {
+        logger.Error("Failed to freeze process: not root.");
+        return false;
+    }
     if (kill(pid, SIGSTOP) == -1) {
         logger.Error("Failed to send SIGSTOP to process {}.", pid);
         return false;
@@ -110,18 +114,21 @@ bool FreezeProcessByPid(pid_t pid) {
         logger.Error("Failed to get state of process {}.", pid);
         return false;
     }
-    if (*isStopped) {
-        logger.Debug("Process {} froze successfully.", pid);
-        return true;
-    } else {
+    if (!*isStopped) {
         logger.Error("Failed to freeze process {}.", pid);
         return false;
     }
+    logger.Debug("Process {} froze successfully.", pid);
+    return true;
 }
 
 bool TryToResumeProsessByPid(pid_t pid, int attempts) {
     if (attempts < 1) {
         logger.Error("Failed to resume prosess {}: attempts={} less than one.", pid, attempts);
+        return false;
+    }
+    if (getuid() != 0) {
+        logger.Error("Failed to resume process: not root.");
         return false;
     }
     for (int i = 0, j = 0; i < attempts; ++i) {

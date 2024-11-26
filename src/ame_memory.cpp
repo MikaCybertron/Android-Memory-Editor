@@ -32,7 +32,7 @@
 #include <string>
 #include <string_view>
 
-std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(std::string_view)> predicate) {
+std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const std::string &)> predicate) {
     logger.Debug("Get address range start.");
     std::string mapsPath = std::format("/proc/{}/maps", pid);
     std::ifstream mapsFile(mapsPath);
@@ -60,63 +60,63 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(std::str
 std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
     switch (zone) {
         case MemoryZone::ALL: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return true;
             });
         }
         case MemoryZone::ASHMEM: {
-            return GetAddrRange(pid, [](std::string_view str) {      //
+            return GetAddrRange(pid, [](auto &str) {                 //
                 return str.find("/dev/ashmem/") != std::string::npos //
                     && str.find("dalvik") == std::string::npos;
             });
         }
         case MemoryZone::A_ANONMYOURS: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.length() < 42;
             });
         }
         case MemoryZone::B_BAD: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("/system/fonts") != std::string::npos;
             });
         }
         case MemoryZone::CODE_SYSTEM: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("/system") != std::string::npos;
             });
         }
         case MemoryZone::C_ALLOC: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("[anon:libc_malloc]") != std::string::npos;
             });
         }
         case MemoryZone::C_BSS: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("[anon:.bss]") != std::string::npos;
             });
         }
         case MemoryZone::C_DATA: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("/data/") != std::string::npos;
             });
         }
         case MemoryZone::C_HEAP: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("[heap]") != std::string::npos;
             });
         }
         case MemoryZone::JAVA_HEAP: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("/dev/ashmem/") != std::string::npos;
             });
         }
         case MemoryZone::STACK: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("[stack]") != std::string::npos;
             });
         }
         case MemoryZone::V: {
-            return GetAddrRange(pid, [](std::string_view str) { //
+            return GetAddrRange(pid, [](auto &str) { //
                 return str.find("/dev/kgsl-3d0") != std::string::npos;
             });
         }
