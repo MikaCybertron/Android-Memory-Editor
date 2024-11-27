@@ -295,14 +295,14 @@ template <typename T>
 int WriteAddressGroup(pid_t pid, const AddrList &&addrList, const T &&value, int groupSize = 1) {
     if (groupSize < 1) {
         logger.Error("Failed to write meory: groupSize={} less than one.", groupSize);
-        return 0;
+        return -1;
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
     int memFile = open(memPath.c_str(), O_WRONLY);
     if (memFile == -1) {
         logger.Error("Failed to write meory: failed to open {}", memPath);
-        return 0;
+        return -1;
     }
 
     int i = 1, successCount = 0;
@@ -324,34 +324,35 @@ int WriteAddressGroup(pid_t pid, const AddrList &&addrList, const T &&value, int
 /**
  * @brief Copy values of items to each "array" in addrList.
  * @tparam T  base data type, e.g. short, int, float, long.
- * @return Count of successful writes.
+ * @return Counts of successful writes for each address.
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-int WriteArrayAddress(pid_t pid, const AddrList &&addrList, const std::vector<T> &&items) {
+std::vector<int> WriteArrayAddress(pid_t pid, const AddrList &&addrList, const std::vector<T> &&items) {
     if (items.empty()) {
         logger.Error("Failed to write array address: items is empty.");
-        return 0;
+        return {};
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
     int memFile = open(memPath.c_str(), O_WRONLY);
     if (memFile == -1) {
         logger.Error("Failed to write array address: failed to open {}", memPath);
-        return 0;
+        return {};
     }
 
-    int successCount = 0;
+    std::vector<int> successCountVec;
     for (const auto &address : addrList) {
-        for (size_t i = 0; const auto &&value : items) {
-            if (pwrite64(memFile, &value, sizeof(T), address + sizeof(T) * i) > 0) {
+        int successCount = 0;
+        for (size_t i = 0; i < items.size(); ++i) {
+            if (pwrite64(memFile, &items[i], sizeof(T), address + sizeof(T) * i) > 0) {
                 ++successCount;
             }
-            ++i;
         }
+        successCountVec.push_back(successCount);
     }
     close(memFile);
-    return successCount;
+    return successCountVec;
 };
 
 
