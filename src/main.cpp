@@ -52,11 +52,11 @@ int main() {
 
     // FreezeProcessByPid(pid);
     // auto listOp = FindArrayAddress<int32_t>(pid,
-    //                                     MemoryZone::A_ANONMYOURS,
-    //                                     /* the density of fog in each cell */
-    //                                     {
-    //                                         200, 200, 200, 200, 200, 200, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    //                                     });
+    //                                         MemoryZone::A_ANONMYOURS,
+    //                                         // the density of fog in each cell
+    //                                         {
+    //                                             200, 200, 200, 200, 200, 200, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
+    //                                         });
     // if (listOp.has_value() && !listOp->empty()) {
     //     for (const auto &address : *listOp) {
     //         logger.Info("Fog address: 0x{:X}", address);

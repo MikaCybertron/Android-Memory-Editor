@@ -31,6 +31,7 @@
 
 #include <forward_list>
 #include <functional>
+#include <iterator>
 #include <optional>
 #include <string_view>
 #include <type_traits>
@@ -56,7 +57,7 @@ enum class MemoryZone {
     V,            // v内存
 };
 
-[[nodiscard]] std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(std::string_view)> predicate);
+[[nodiscard]] std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const std::string &)> predicate);
 
 [[nodiscard]] std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone);
 
@@ -342,6 +343,7 @@ std::vector<int> WriteArrayAddress(pid_t pid, const AddrList &&addrList, const s
     }
 
     std::vector<int> successCountVec;
+    successCountVec.reserve(std::distance(addrList.cbegin(), addrList.cend()));
     for (const auto &address : addrList) {
         int successCount = 0;
         for (size_t i = 0; i < items.size(); ++i) {
