@@ -1,12 +1,12 @@
 # Android-Memory-Editor
 
+**[English](./README.md)** | **简体中文**
+
 [![语言](https://img.shields.io/github/languages/top/Dicot0721/Android-Memory-Editor)]()
 [![许可协议](https://img.shields.io/github/license/Dicot0721/Android-Memory-Editor)
 ](https://www.gnu.org/licenses/gpl-3.0.html)
 
-**[English](./README.md)** | **简体中文**
-
-一个简单的内存读写程序, 基于安卓的 Linux 内核.
+一个简单的内存搜索/修改工具, 基于安卓的 Linux 内核.
 
 
 ## 功能

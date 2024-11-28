@@ -60,7 +60,7 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const st
 std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
     switch (zone) {
         case MemoryZone::ALL: {
-            return GetAddrRange(pid, [](auto &str) { //
+            return GetAddrRange(pid, [](auto &) { //
                 return true;
             });
         }

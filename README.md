@@ -1,12 +1,12 @@
 # Android-Memory-Editor
 
+**English** | **[简体中文](./README.zh-CN.md)**
+
 [![language](https://img.shields.io/github/languages/top/Dicot0721/Android-Memory-Editor)]()
 [![licence](https://img.shields.io/github/license/Dicot0721/Android-Memory-Editor)
 ](https://www.gnu.org/licenses/gpl-3.0.html)
 
-**English** | **[简体中文](./README.zh-CN.md)**
-
-A simple memory read/write program, based on Linux kernel of Android.
+A simple memory scanner/editor, based on Linux kernel of Android.
 
 
 ## Function
