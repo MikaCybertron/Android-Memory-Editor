@@ -22,6 +22,7 @@
 
 #include <sys/types.h>
 
+#include <cassert>
 #include <cstdint>
 
 #include <format>
@@ -125,6 +126,7 @@ std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
         }
         [[unlikely]] default: {
             logger.Error("Unexpected Case For MemoryZone: {}", static_cast<int>(zone));
+            assert(false);
             return std::nullopt;
         }
     }

@@ -41,14 +41,14 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
         logger.Error("pid not find: {}:", strerror(errno));
         return std::nullopt;
     }
-    dirent *dp = nullptr;
+    dirent *entry = nullptr;
     std::optional<pid_t> result = std::nullopt;
-    while ((dp = readdir(dirp)) != nullptr) {
-        if (dp->d_type != DT_DIR) {
+    while ((entry = readdir(dirp)) != nullptr) {
+        if (entry->d_type != DT_DIR) {
             // not a directory
             continue;
         }
-        std::string_view pidStr = dp->d_name;
+        std::string_view pidStr = entry->d_name;
         if (pidStr.find_first_not_of("0123456789") != std::string::npos) {
             // not numeric name
             continue;

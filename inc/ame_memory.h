@@ -35,6 +35,7 @@
 #include <optional>
 #include <string_view>
 #include <type_traits>
+#include <utility>
 #include <vector>
 
 // uint64_t rather than unsigned long/uintptr_t.
