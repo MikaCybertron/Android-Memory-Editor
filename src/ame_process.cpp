@@ -21,7 +21,7 @@
 #include "ame_logger.h"
 
 #include <dirent.h>
-#include <unistd.h>
+#include <unistd.h> // for getuid, usleep
 
 #include <csignal>
 #include <cstdlib>
@@ -33,6 +33,7 @@
 #include <regex>
 #include <string>
 #include <string_view>
+
 
 std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
     DIR *dirp = opendir("/proc");
@@ -70,6 +71,7 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
     return result;
 }
 
+
 std::optional<bool> IsProcessStopped(pid_t pid) {
     std::string statusPath = std::format("/proc/{}/status", pid);
     std::ifstream statusFile(statusPath);
@@ -79,9 +81,9 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
     }
     std::string line;
     std::smatch matches;
-    std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((\S+?)\))re");
+    std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((\S+?)\)$)re");
     while (getline(statusFile, line)) {
-        if (!std::regex_search(line, matches, stateRegex)) {
+        if (!std::regex_match(line, matches, stateRegex)) {
             continue;
         }
         std::string stateCode = matches.str(1);
@@ -97,6 +99,7 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
     // statusFile.close();
     return std::nullopt;
 }
+
 
 bool FreezeProcessByPid(pid_t pid) {
     if (getuid() != 0) {
@@ -121,6 +124,7 @@ bool FreezeProcessByPid(pid_t pid) {
     logger.Debug("Process {} froze successfully.", pid);
     return true;
 }
+
 
 bool TryToResumeProsessByPid(pid_t pid, int attempts) {
     if (attempts < 1) {

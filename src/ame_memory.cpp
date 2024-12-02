@@ -31,6 +31,8 @@
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <utility>
+
 
 std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const std::string &)> predicate) {
     logger.Debug("Get address range start.");
@@ -49,13 +51,14 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const st
             char tmpChar; // to skip character '-'
             lineStream.str(line);
             lineStream >> std::hex >> beginAddr >> tmpChar >> endAddr;
-            addrRangeList.push_front({beginAddr, endAddr});
+            addrRangeList.emplace_front(std::make_pair(beginAddr, endAddr));
         }
     }
     mapsFile.close();
     logger.Debug("Get address range end.");
     return addrRangeList;
 }
+
 
 std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
     switch (zone) {

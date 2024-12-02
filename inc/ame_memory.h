@@ -22,9 +22,9 @@
 
 #include "ame_logger.h"
 
-#include <fcntl.h>
+#include <fcntl.h> // for open
 #include <sys/types.h>
-#include <unistd.h>
+#include <unistd.h> // for close
 
 #include <cstdint>
 #include <cstdio>
@@ -37,7 +37,7 @@
 #include <type_traits>
 #include <vector>
 
-// uint64_t rather than uintptr_t/unsigned long/unsigned long long.
+// uint64_t rather than unsigned long/uintptr_t.
 using AddrRangeList = std::forward_list<std::pair<uint64_t, uint64_t>>;
 using AddrList = std::forward_list<uint64_t>;
 
