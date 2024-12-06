@@ -81,7 +81,7 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
     }
     std::string line;
     std::smatch matches;
-    std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((\S+?)\)$)re");
+    std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
     while (getline(statusFile, line)) {
         if (!std::regex_match(line, matches, stateRegex)) {
             continue;
