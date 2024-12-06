@@ -20,9 +20,6 @@
 #ifndef __INC_AME_LOGGER_H__
 #define __INC_AME_LOGGER_H__
 
-#include <cerrno>
-#include <cstring>
-
 #include <format>
 #include <iostream>
 #include <string_view>

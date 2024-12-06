@@ -23,49 +23,51 @@
 
 
 int main() {
+    // Init
     std::string packageName = "com.popcap.pvz_na";
-    auto pidOp = FindPidByPackageName(packageName);
-    if (!pidOp.has_value()) {
-        logger.Info("pid of {} not find.", packageName);
-        return 0;
+    logger.Info("Package name: {}", packageName);
+    if (auto pidOpt = FindPidByPackageName(packageName); pidOpt.has_value()) {
+        logger.Info("PID of {}: {}", packageName, *pidOpt);
+    } else {
+        logger.Info("PID of {} not find.", packageName);
     }
-    pid_t pid = *pidOp;
-    logger.Info("pid of {}: {}", packageName, pid);
 
-    // Test
-    logger.Info("[1] Freeze Process");
-    logger.Info("[2] Resume Prosess");
-    logger.Info("[3] Exit");
-    std::string input;
+    // Interact (test)
+    std::string option;
+    logger.Info("[1] Reset Package Name");
+    logger.Info("[2] Find PID");
+    logger.Info("[3] Freeze Process");
+    logger.Info("[4] Resume Prosess");
+    logger.Info("[5] Exit");
     while (true) {
-        logger.Info("Enter an option in [1, 2, 3]");
-        std::cin >> input;
-        if (input == "1") {
-            FreezeProcessByPid(pid);
-        } else if (input == "2") {
-            TryToResumeProsessByPid(pid);
-        } else if (input == "3") {
+        logger.Info("Enter an option in [1, 2, 3, 4, 5]");
+        std::cin >> option;
+
+        if (option == "1") {
+            logger.Info("Enter new package name:");
+            std::cin >> packageName;
+            logger.Info("New package name: {}", packageName);
+
+        } else if (option == "2") {
+            if (auto pidOpt = FindPidByPackageName(packageName); pidOpt.has_value()) {
+                logger.Info("PID of {}: {}", packageName, *pidOpt);
+            } else {
+                logger.Info("PID of {} not find.", packageName);
+            }
+
+        } else if (option == "3") {
+            FreezeProcessByPackageName(packageName);
+
+        } else if (option == "4") {
+            ResumeProsessByPackageName(packageName);
+
+        } else if (option == "5") {
             break;
+
         } else {
             logger.Info("Wrong option!");
         }
     }
-
-    // FreezeProcessByPid(pid);
-    // auto listOp = FindArrayAddress<int32_t>(pid,
-    //                                         MemoryZone::A_ANONMYOURS,
-    //                                         // the density of fog in each cell
-    //                                         {
-    //                                             200, 200, 200, 200, 200, 200, 200, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255, 255,
-    //                                         });
-    // if (listOp.has_value() && !listOp->empty()) {
-    //     for (const auto &address : *listOp) {
-    //         logger.Info("Fog address: 0x{:X}", address);
-    //     }
-    // } else {
-    //     logger.Warning("Fog address not find.");
-    // }
-    // TryToResumeProsessByPid(pid);
 
     return 0;
 }

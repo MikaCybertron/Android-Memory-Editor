@@ -23,6 +23,7 @@
 #include <dirent.h>
 #include <unistd.h> // for getuid, usleep
 
+#include <cerrno>
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
@@ -63,7 +64,7 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
         std::getline(cmdlineFile, cmdline, '\0');
         cmdlineFile.close();
         if (cmdline == packageName) {
-            result = atoi(pidStr.data());
+            result = atoi(entry->d_name);
             break;
         }
     }
@@ -126,7 +127,7 @@ bool FreezeProcessByPid(pid_t pid) {
 }
 
 
-bool TryToResumeProsessByPid(pid_t pid, int attempts) {
+bool ResumeProsessByPid(pid_t pid, int attempts) {
     if (attempts < 1) {
         logger.Error("Failed to resume prosess {}: attempts={} less than one.", pid, attempts);
         return false;
@@ -149,4 +150,34 @@ bool TryToResumeProsessByPid(pid_t pid, int attempts) {
     }
     logger.Error("Failed to resume process {} after {} attempts.", pid, attempts);
     return false;
+}
+
+
+/**
+ * @retval 0 Freeze successfully.
+ * @retval -1 Could not find PID by package name.
+ * @retval -2 Freeze failed.
+ */
+int FreezeProcessByPackageName(std::string_view packageName) {
+    auto pidOpt = FindPidByPackageName(packageName);
+    if (!pidOpt.has_value()) {
+        logger.Error("pid of {} not find.", packageName);
+        return -1;
+    }
+    return FreezeProcessByPid(*pidOpt) ? 0 : -2;
+}
+
+
+/**
+ * @retval 0 Resume successfully.
+ * @retval -1 Could not find PID by package name.
+ * @retval -2 Resume failed.
+ */
+int ResumeProsessByPackageName(std::string_view packageName, int attempts) {
+    auto pidOpt = FindPidByPackageName(packageName);
+    if (!pidOpt.has_value()) {
+        logger.Error("pid of {} not find.", packageName);
+        return -1;
+    }
+    return ResumeProsessByPid(*pidOpt, attempts) ? 0 : -2;
 }
