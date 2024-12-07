@@ -68,7 +68,7 @@ enum class MemoryZone {
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FindAddress(pid_t pid, MemoryZone zone, const T &&valueToFind) {
+[[nodiscard]] std::optional<AddrList> FindAddress(pid_t pid, MemoryZone zone, T valueToFind) {
     auto addrRangeList = GetAddrRangeByZone(pid, zone);
     if (!addrRangeList.has_value()) {
         logger.Error("Failed to find address: failed to get address range.");
@@ -110,7 +110,7 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FindAddressByRange(pid_t pid, MemoryZone zone, const T &&minValue, const T &&maxValue) {
+[[nodiscard]] std::optional<AddrList> FindAddressByRange(pid_t pid, MemoryZone zone, T minValue, T maxValue) {
     if (minValue > maxValue) {
         logger.Error("Failed to find address: minValue > maxValue. ({}, {})", minValue, maxValue);
         return std::nullopt;
@@ -157,7 +157,7 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FindArrayAddress(pid_t pid, MemoryZone zone, const std::vector<T> &&items) {
+[[nodiscard]] std::optional<AddrList> FindArrayAddress(pid_t pid, MemoryZone zone, const std::vector<T> &items) {
     if (items.empty()) {
         logger.Error("Failed to find address: items is empty.");
         return std::nullopt;
@@ -206,7 +206,7 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FilterAddrListByOffset(pid_t pid, const AddrList &&listToFilter, const T &&valueToFind, int64_t offset) {
+[[nodiscard]] std::optional<AddrList> FilterAddrListByOffset(pid_t pid, const AddrList &listToFilter, T valueToFind, int64_t offset) {
     std::string memPath = std::format("/proc/{}/mem", pid);
     int memFile = open(memPath.c_str(), O_RDONLY);
     if (memFile == -1) {
@@ -240,7 +240,7 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FilterAddrList(pid_t pid, const AddrList &&listToFilter, const T &&value) {
+[[nodiscard]] std::optional<AddrList> FilterAddrList(pid_t pid, const AddrList &listToFilter, T value) {
     return FilterAddrListByOffset(pid, listToFilter, value, 0);
 };
 
@@ -251,7 +251,7 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-[[nodiscard]] std::optional<AddrList> FilterAddrListByRange(pid_t pid, const AddrList &&listToFilter, const T &&minValue, const T &&maxValue) {
+[[nodiscard]] std::optional<AddrList> FilterAddrListByRange(pid_t pid, const AddrList &listToFilter, T minValue, T maxValue) {
     if (minValue > maxValue) {
         logger.Error("Failed to filter address: minValue > maxValue. ({}, {})", minValue, maxValue);
         return std::nullopt;
@@ -293,7 +293,7 @@ template <typename T>
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-int WriteAddressGroup(pid_t pid, const AddrList &&addrList, const T &&value, int groupSize = 1) {
+int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSize = 1) {
     if (groupSize < 1) {
         logger.Error("Failed to write meory: groupSize={} less than one.", groupSize);
         return -1;
@@ -329,7 +329,7 @@ int WriteAddressGroup(pid_t pid, const AddrList &&addrList, const T &&value, int
  */
 template <typename T>
     requires std::is_arithmetic_v<T>
-std::vector<int> WriteArrayAddress(pid_t pid, const AddrList &&addrList, const std::vector<T> &&items) {
+std::vector<int> WriteArrayAddress(pid_t pid, const AddrList &addrList, const std::vector<T> &items) {
     if (items.empty()) {
         logger.Error("Failed to write array address: items is empty.");
         return {};
