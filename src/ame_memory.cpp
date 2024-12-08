@@ -35,27 +35,33 @@
 
 
 std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const std::string &)> predicate) {
-    logger.Debug("Get address range start.");
     std::string mapsPath = std::format("/proc/{}/maps", pid);
     std::ifstream mapsFile(mapsPath);
     if (!mapsFile.is_open()) {
-        logger.Error("Failed to open: {}:", mapsPath);
+        logger.Error("Get address range failed: failed to open {}:", mapsPath);
         return std::nullopt;
     }
-    std::string line;
-    std::istringstream lineStream;
-    uint64_t beginAddr, endAddr;
+
     AddrRangeList addrRangeList;
-    while (std::getline(mapsFile, line)) {
-        if (line.find("rw") != std::string::npos && predicate(line)) {
-            char tmpChar; // to skip character '-'
-            lineStream.str(line);
-            lineStream >> std::hex >> beginAddr >> tmpChar >> endAddr;
+    std::istringstream lineStream;
+    for (std::string line; std::getline(mapsFile, line);) {
+        std::string::size_type flagsPos = line.find("rw");
+        if (flagsPos == std::string::npos || flagsPos > 27) {
+            continue; // 27 is the max columns of vm_flags
+        }
+        if (!predicate(line)) {
+            continue;
+        }
+        char tmpChar; // to skip character '-'
+        uint64_t beginAddr, endAddr;
+        lineStream.str(line);
+        if (lineStream >> std::hex >> beginAddr >> tmpChar >> endAddr) {
             addrRangeList.emplace_front(std::make_pair(beginAddr, endAddr));
+        } else [[unlikely]] {
+            lineStream.clear();
         }
     }
     mapsFile.close();
-    logger.Debug("Get address range end.");
     return addrRangeList;
 }
 
@@ -125,7 +131,7 @@ std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
         }
         [[unlikely]] default: {
             logger.Error("Unexpected Case For MemoryZone: {}", static_cast<int>(zone));
-            assert(false);
+            assert(false && "Unexpected Case For MemoryZone");
             return std::nullopt;
         }
     }

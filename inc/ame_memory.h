@@ -88,7 +88,6 @@ template <typename T>
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             T value = 0;
             if (pread64(memFile, &value, sizeof(T), address) <= 0) {
-                // logger.Error("pread failed.");
                 continue;
             }
             if (value == valueToFind) {
@@ -135,7 +134,6 @@ template <typename T>
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             T value = 0;
             if (pread64(memFile, &value, sizeof(T), address) <= 0) {
-                // logger.Error("pread failed.");
                 continue;
             }
             if (minValue <= value && value <= maxValue) {
@@ -219,7 +217,6 @@ template <typename T>
     for (const auto &address : listToFilter) {
         T value = 0;
         if (pread64(memFile, &value, sizeof(T), address + offset) <= 0) {
-            // logger.Error("pread failed.");
             continue;
         }
         if (value == valueToFind) {
@@ -269,7 +266,6 @@ template <typename T>
     for (const auto &address : listToFilter) {
         T value = 0;
         if (pread64(memFile, &value, sizeof(T), address) <= 0) {
-            // logger.Error("pread failed.");
             continue;
         }
         if (minValue <= value && value <= maxValue) {
@@ -306,12 +302,12 @@ int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSiz
         return -1;
     }
 
-    int i = 1, successCount = 0;
-    for (const auto &address : addrList) {
-        if (pwrite64(memFile, &value, sizeof(T), address) > 0) {
-            ++successCount;
+    int successCount = 0;
+    for (int i = 1; const auto &address : addrList) {
+        if (pwrite64(memFile, &value, sizeof(T), address) == -1) {
+            logger.Debug("The {} times write failed.", i);
         } else {
-            logger.Error("The {} times write failed.", i);
+            ++successCount;
         }
         if (++i > groupSize) {
             break;
@@ -347,7 +343,7 @@ std::vector<int> WriteArrayAddress(pid_t pid, const AddrList &addrList, const st
     for (const auto &address : addrList) {
         int successCount = 0;
         for (size_t i = 0; i < items.size(); ++i) {
-            if (pwrite64(memFile, &items[i], sizeof(T), address + sizeof(T) * i) > 0) {
+            if (pwrite64(memFile, &items[i], sizeof(T), address + sizeof(T) * i) != -1) {
                 ++successCount;
             }
         }

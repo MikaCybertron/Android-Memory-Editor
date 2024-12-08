@@ -42,17 +42,15 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
         logger.Error("pid not find: {}:", strerror(errno));
         return std::nullopt;
     }
-    dirent *entry = nullptr;
-    std::optional<pid_t> result = std::nullopt;
-    while ((entry = readdir(dirp)) != nullptr) {
+
+    std::optional<pid_t> result;
+    for (dirent *entry = nullptr; (entry = readdir(dirp)) != nullptr;) {
         if (entry->d_type != DT_DIR) {
-            // not a directory
-            continue;
+            continue; // not a directory
         }
-        std::string_view pidStr = entry->d_name;
+        std::string_view pidStr(entry->d_name);
         if (pidStr.find_first_not_of("0123456789") != std::string::npos) {
-            // not numeric name
-            continue;
+            continue; // not numeric name
         }
         std::string cmdlinePath = std::format("/proc/{}/cmdline", pidStr);
         std::ifstream cmdlineFile(cmdlinePath);
@@ -80,10 +78,10 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
         logger.Error("Failed to open: {}:", statusPath);
         return std::nullopt;
     }
-    std::string line;
+
     std::smatch matches;
-    std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
-    while (getline(statusFile, line)) {
+    const std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
+    for (std::string line; getline(statusFile, line);) {
         if (!std::regex_match(line, matches, stateRegex)) {
             continue;
         }
@@ -107,11 +105,13 @@ bool FreezeProcessByPid(pid_t pid) {
         logger.Error("Failed to freeze process: not root.");
         return false;
     }
+
     if (kill(pid, SIGSTOP) == -1) {
         logger.Error("Failed to send SIGSTOP to process {}.", pid);
         return false;
     }
     logger.Debug("Success to send SIGSTOP to process {}.", pid);
+
     usleep(1000 * 10); // sleep 10ms, wait for process status
     auto isStopped = IsProcessStopped(pid);
     if (!isStopped.has_value()) {
@@ -136,13 +136,12 @@ bool ResumeProsessByPid(pid_t pid, int attempts) {
         logger.Error("Failed to resume process: not root.");
         return false;
     }
-    for (int i = 0, j = 0; i < attempts; ++i) {
+    for (int i = 0; i < attempts; ++i) {
         if (kill(pid, SIGCONT) == -1) {
-            logger.Error("Failed to send SIGCONT to process {} for {} time.", pid, ++j);
             continue;
         }
         usleep(1000); // sleep 1ms, wait for process status
-        if (auto isStop = IsProcessStopped(pid); isStop.has_value() && !*isStop) {
+        if (auto isStopped = IsProcessStopped(pid); isStopped.has_value() && !*isStopped) {
             logger.Debug("Process {} resumed successfully.", pid);
             return true;
         }
@@ -161,7 +160,7 @@ bool ResumeProsessByPid(pid_t pid, int attempts) {
 int FreezeProcessByPackageName(std::string_view packageName) {
     auto pidOpt = FindPidByPackageName(packageName);
     if (!pidOpt.has_value()) {
-        logger.Error("pid of {} not find.", packageName);
+        logger.Error("Failed to freeze process: pid of {} not find.", packageName);
         return -1;
     }
     return FreezeProcessByPid(*pidOpt) ? 0 : -2;
@@ -176,7 +175,7 @@ int FreezeProcessByPackageName(std::string_view packageName) {
 int ResumeProsessByPackageName(std::string_view packageName, int attempts) {
     auto pidOpt = FindPidByPackageName(packageName);
     if (!pidOpt.has_value()) {
-        logger.Error("pid of {} not find.", packageName);
+        logger.Error("Failed to resume process: pid of {} not find.", packageName);
         return -1;
     }
     return ResumeProsessByPid(*pidOpt, attempts) ? 0 : -2;
