@@ -23,6 +23,7 @@
 #include <dirent.h>
 #include <unistd.h> // for getuid, usleep
 
+#include <cctype>
 #include <cerrno>
 #include <csignal>
 #include <cstdlib>
@@ -43,22 +44,18 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
         return std::nullopt;
     }
 
+    std::string cmdline;
     std::optional<pid_t> result;
     for (dirent *entry = nullptr; (entry = readdir(dirp)) != nullptr;) {
-        if (entry->d_type != DT_DIR) {
-            continue; // not a directory
+        if (entry->d_type != DT_DIR || !isdigit(entry->d_name[0])) {
+            continue; // not a directory or not numeric name
         }
-        std::string_view pidStr(entry->d_name);
-        if (pidStr.find_first_not_of("0123456789") != std::string::npos) {
-            continue; // not numeric name
-        }
-        std::string cmdlinePath = std::format("/proc/{}/cmdline", pidStr);
+        std::string cmdlinePath = std::format("/proc/{}/cmdline", entry->d_name);
         std::ifstream cmdlineFile(cmdlinePath);
         if (!cmdlineFile.is_open()) {
             logger.Error("Failed to open: {}:", cmdlinePath);
             continue;
         }
-        std::string cmdline;
         std::getline(cmdlineFile, cmdline, '\0');
         cmdlineFile.close();
         if (cmdline == packageName) {
@@ -81,7 +78,7 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
 
     std::smatch matches;
     const std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
-    for (std::string line; getline(statusFile, line);) {
+    for (std::string line; std::getline(statusFile, line);) {
         if (!std::regex_match(line, matches, stateRegex)) {
             continue;
         }
