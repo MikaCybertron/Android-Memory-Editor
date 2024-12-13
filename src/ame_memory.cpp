@@ -31,7 +31,6 @@
 #include <optional>
 #include <sstream>
 #include <string>
-#include <utility>
 
 
 std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const std::string &)> predicate) {
@@ -45,7 +44,7 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const st
     AddrRangeList addrRangeList;
     std::istringstream lineStream;
     for (std::string line; std::getline(mapsFile, line);) {
-        std::string::size_type flagsPos = line.find("rw");
+        auto flagsPos = line.find("rw");
         if (flagsPos == std::string::npos || flagsPos > 27) {
             continue; // 27 is the max columns of vm_flags
         }
@@ -56,8 +55,9 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const st
         uint64_t beginAddr, endAddr;
         lineStream.str(line);
         if (lineStream >> std::hex >> beginAddr >> tmpChar >> endAddr) {
-            addrRangeList.emplace_front(std::make_pair(beginAddr, endAddr));
+            addrRangeList.emplace_front(beginAddr, endAddr);
         } else [[unlikely]] {
+            logger.Warning("Failed to format address range.");
             lineStream.clear();
         }
     }

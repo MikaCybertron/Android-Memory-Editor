@@ -20,63 +20,73 @@
 #ifndef __INC_AME_LOGGER_H__
 #define __INC_AME_LOGGER_H__
 
+#include <array>
 #include <format>
 #include <iostream>
-#include <string_view>
 
 enum class LogLevel {
-    INFO,
     DEBUG,
+    INFO,
     WARNING,
     ERROR,
+    OFF,
 };
 
 class Logger {
 public:
-    void Debug(std::string_view message) noexcept {
-        std::clog << "\033[32m"            // green
-                  << "[DEBUG] " << message //
-                  << "\033[39m"            // default color
-                  << "\n";
+    void SetLevel(LogLevel level) noexcept {
+        _level = level;
     }
 
-    void Info(std::string_view message) noexcept {
-        std::cout << "[INFO] " << message << std::endl;
+    template <typename... Args>
+    void Debug(std::format_string<Args...> format, Args &&...args) {
+        _Output(LogLevel::DEBUG, format, std::forward<Args>(args)...);
     }
 
-    void Warning(std::string_view message) noexcept {
-        std::cerr << "\033[33m"              // yellow
-                  << "[WARNING] " << message //
-                  << "\033[39m"              // default color
-                  << "\n";
+    template <typename... Args>
+    void Info(std::format_string<Args...> format, Args &&...args) {
+        _Output(LogLevel::INFO, format, std::forward<Args>(args)...);
     }
 
-    void Error(std::string_view message) noexcept {
-        std::cerr << "\033[31m"            // red
-                  << "[ERROR] " << message //
-                  << "\033[39m"            // default color
-                  << "\n";
+    template <typename... Args>
+    void Warning(std::format_string<Args...> format, Args &&...args) {
+        _Output(LogLevel::WARNING, format, std::forward<Args>(args)...);
     }
 
-    template <class... Types>
-    void Debug(const std::format_string<Types...> format, Types &&...args) {
-        Debug(std::vformat(format.get(), std::make_format_args(args...)));
+    template <typename... Args>
+    void Error(std::format_string<Args...> format, Args &&...args) {
+        _Output(LogLevel::ERROR, format, std::forward<Args>(args)...);
     }
 
-    template <class... Types>
-    void Info(const std::format_string<Types...> format, Types &&...args) {
-        Info(std::vformat(format.get(), std::make_format_args(args...)));
+protected:
+    template <typename... Args>
+    void _Output(LogLevel level, const std::format_string<Args...> &format, Args &&...args) {
+        if (level < _level) {
+            return;
+        }
+        std::string message = std::vformat(format.get(), std::make_format_args(args...));
+        (level == LogLevel::ERROR ? std::cerr : std::clog) << _colorStr[int(level)]                //
+                                                           << "[" << _levelStr[int(level)] << "] " // header
+                                                           << message                              //
+                                                           << "\033[39m"                           // default color
+                                                           << "\n";                                //
     }
 
-    template <class... Types>
-    void Warning(const std::format_string<Types...> format, Types &&...args) {
-        Warning(std::vformat(format.get(), std::make_format_args(args...)));
-    }
+    static constexpr std::array<std::string, 4> _levelStr = {
+        "DEBUG",
+        "INFO",
+        "WARNING",
+        "ERROR",
+    };
 
-    template <class... Types>
-    void Error(const std::format_string<Types...> format, Types &&...args) {
-        Error(std::vformat(format.get(), std::make_format_args(args...)));
-    }
+    static constexpr std::array<std::string, 4> _colorStr = {
+        "\033[32m", // green
+        "",
+        "\033[33m", // yellow
+        "\033[31m", // red
+    };
+
+    LogLevel _level = LogLevel::DEBUG;
 
 } inline logger;
 

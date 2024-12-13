@@ -41,7 +41,7 @@
 using AddrRangeList = std::forward_list<std::pair<uint64_t, uint64_t>>;
 using AddrList = std::forward_list<uint64_t>;
 
-// 内存区域
+// 内存分区
 enum class MemoryZone {
     ALL,          // 所有内存
     ASHMEM,       // AS内存
@@ -304,10 +304,10 @@ int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSiz
 
     int successCount = 0;
     for (int i = 1; const auto &address : addrList) {
-        if (pwrite64(memFile, &value, sizeof(T), address) == -1) {
-            logger.Debug("The {} times write failed.", i);
-        } else {
+        if (pwrite64(memFile, &value, sizeof(T), address) != -1) {
             ++successCount;
+        } else {
+            logger.Warning("The {} times write failed.", i);
         }
         if (++i > groupSize) {
             break;

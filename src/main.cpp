@@ -21,38 +21,41 @@
 #include "ame_memory.h"
 #include "ame_process.h"
 
+#include <format>
+#include <iostream>
+
 
 int main() {
     // Init
     std::string packageName = "com.popcap.pvz_na";
-    logger.Info("Package name: {}", packageName);
+    std::cout << "Package name: " << packageName << std::endl;
     if (auto pidOpt = FindPidByPackageName(packageName); pidOpt.has_value()) {
-        logger.Info("PID of {}: {}", packageName, *pidOpt);
+        std::cout << std::format("PID of {}: {}", packageName, *pidOpt) << std::endl;
     } else {
-        logger.Info("PID of {} not find.", packageName);
+        std::cout << std::format("PID of {} not find.", packageName) << std::endl;
     }
 
     // Interact (test)
     std::string option;
-    logger.Info("[1] Reset Package Name");
-    logger.Info("[2] Find PID");
-    logger.Info("[3] Freeze Process");
-    logger.Info("[4] Resume Prosess");
-    logger.Info("[5] Exit");
+    std::cout << "[1] Reset Package Name" << std::endl;
+    std::cout << "[2] Find PID" << std::endl;
+    std::cout << "[3] Freeze Process" << std::endl;
+    std::cout << "[4] Resume Prosess" << std::endl;
+    std::cout << "[5] Exit" << std::endl;
     while (true) {
-        logger.Info("Enter an option in [1, 2, 3, 4, 5]");
+        std::cout << "Enter an option in [1, 2, 3, 4, 5]" << std::endl;
         std::cin >> option;
 
         if (option == "1") {
-            logger.Info("Enter new package name:");
+            std::cout << "Enter new package name:" << std::endl;
             std::cin >> packageName;
-            logger.Info("New package name: {}", packageName);
+            std::cout << "New package name: " << packageName << std::endl;
 
         } else if (option == "2") {
             if (auto pidOpt = FindPidByPackageName(packageName); pidOpt.has_value()) {
-                logger.Info("PID of {}: {}", packageName, *pidOpt);
+                std::cout << std::format("PID of {}: {}", packageName, *pidOpt) << std::endl;
             } else {
-                logger.Info("PID of {} not find.", packageName);
+                std::cout << std::format("PID of {} not find.", packageName) << std::endl;
             }
 
         } else if (option == "3") {
@@ -65,7 +68,7 @@ int main() {
             break;
 
         } else {
-            logger.Info("Wrong option!");
+            std::cout << "Wrong option!" << std::endl;
         }
     }
 

@@ -23,7 +23,6 @@
 #include <dirent.h>
 #include <unistd.h> // for getuid, usleep
 
-#include <cctype>
 #include <cerrno>
 #include <csignal>
 #include <cstdlib>
@@ -38,19 +37,23 @@
 
 
 std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
-    DIR *dirp = opendir("/proc");
-    if (dirp == nullptr) {
+    DIR *procDir = opendir("/proc");
+    if (procDir == nullptr) {
         logger.Error("pid not find: {}:", strerror(errno));
         return std::nullopt;
     }
 
     std::string cmdline;
     std::optional<pid_t> result;
-    for (dirent *entry = nullptr; (entry = readdir(dirp)) != nullptr;) {
-        if (entry->d_type != DT_DIR || !isdigit(entry->d_name[0])) {
-            continue; // not a directory or not numeric name
+    for (dirent *entry = nullptr; (entry = readdir(procDir)) != nullptr;) {
+        if (entry->d_type != DT_DIR) {
+            continue; // not a directory
         }
-        std::string cmdlinePath = std::format("/proc/{}/cmdline", entry->d_name);
+        std::string_view pidStr(entry->d_name);
+        if (pidStr.find_first_not_of("0123456789") != std::string_view::npos) {
+            continue; // not numeric name
+        }
+        std::string cmdlinePath = std::format("/proc/{}/cmdline", pidStr);
         std::ifstream cmdlineFile(cmdlinePath);
         if (!cmdlineFile.is_open()) {
             logger.Error("Failed to open: {}:", cmdlinePath);
@@ -63,7 +66,7 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
             break;
         }
     }
-    closedir(dirp);
+    closedir(procDir);
     return result;
 }
 
