@@ -20,6 +20,8 @@
 #ifndef __INC_AME_LOGGER_H__
 #define __INC_AME_LOGGER_H__
 
+#include <cassert>
+
 #include <array>
 #include <format>
 #include <iostream>
@@ -32,6 +34,8 @@ enum class LogLevel {
     OFF,
 };
 
+constexpr int VALID_LOG_LEVEL_COUNT = static_cast<int>(LogLevel::OFF);
+
 class Logger {
 public:
     void SetLevel(LogLevel level) noexcept {
@@ -40,31 +44,31 @@ public:
 
     template <typename... Args>
     void Debug(std::format_string<Args...> format, Args &&...args) {
-        _Output(LogLevel::DEBUG, format, std::forward<Args>(args)...);
+        _Output(LogLevel::DEBUG, format.get(), std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     void Info(std::format_string<Args...> format, Args &&...args) {
-        _Output(LogLevel::INFO, format, std::forward<Args>(args)...);
+        _Output(LogLevel::INFO, format.get(), std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     void Warning(std::format_string<Args...> format, Args &&...args) {
-        _Output(LogLevel::WARNING, format, std::forward<Args>(args)...);
+        _Output(LogLevel::WARNING, format.get(), std::forward<Args>(args)...);
     }
 
     template <typename... Args>
     void Error(std::format_string<Args...> format, Args &&...args) {
-        _Output(LogLevel::ERROR, format, std::forward<Args>(args)...);
+        _Output(LogLevel::ERROR, format.get(), std::forward<Args>(args)...);
     }
 
 protected:
-    template <typename... Args>
-    void _Output(LogLevel level, const std::format_string<Args...> &format, Args &&...args) {
+    void _Output(LogLevel level, std::string_view format, auto &&...args) {
         if (level < _level) {
             return;
         }
-        std::string message = std::vformat(format.get(), std::make_format_args(args...));
+        assert(static_cast<int>(level) < VALID_LOG_LEVEL_COUNT);
+        std::string message = std::vformat(format, std::make_format_args(args...));
         (level == LogLevel::ERROR ? std::cerr : std::clog) << _colorStr[int(level)]                //
                                                            << "[" << _levelStr[int(level)] << "] " // header
                                                            << message                              //
@@ -72,14 +76,14 @@ protected:
                                                            << "\n";                                //
     }
 
-    static constexpr std::array<std::string, 4> _levelStr = {
+    static constexpr std::array<std::string, VALID_LOG_LEVEL_COUNT> _levelStr = {
         "DEBUG",
         "INFO",
         "WARNING",
         "ERROR",
     };
 
-    static constexpr std::array<std::string, 4> _colorStr = {
+    static constexpr std::array<std::string, VALID_LOG_LEVEL_COUNT> _colorStr = {
         "\033[32m", // green
         "",
         "\033[33m", // yellow

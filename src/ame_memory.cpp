@@ -24,12 +24,12 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdlib>
 
 #include <format>
 #include <fstream>
 #include <functional>
 #include <optional>
-#include <sstream>
 #include <string>
 
 
@@ -42,24 +42,17 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const st
     }
 
     AddrRangeList addrRangeList;
-    std::istringstream lineStream;
     for (std::string line; std::getline(mapsFile, line);) {
-        auto flagsPos = line.find("rw");
-        if (flagsPos == std::string::npos || flagsPos > 27) {
+        if (auto flagsPos = line.find("rw"); flagsPos == std::string::npos || flagsPos > 27) {
             continue; // 27 is the max columns of vm_flags
         }
         if (!predicate(line)) {
             continue;
         }
-        char tmpChar; // to skip character '-'
-        uint64_t beginAddr, endAddr;
-        lineStream.str(line);
-        if (lineStream >> std::hex >> beginAddr >> tmpChar >> endAddr) {
-            addrRangeList.emplace_front(beginAddr, endAddr);
-        } else [[unlikely]] {
-            logger.Warning("Failed to format address range.");
-            lineStream.clear();
-        }
+        size_t hyphenPos;
+        uint64_t startAddr = std::stoull(line, &hyphenPos, 16);
+        uint64_t endAddr = strtoull(&line[hyphenPos + 1], nullptr, 16);
+        addrRangeList.emplace_front(startAddr, endAddr);
     }
     mapsFile.close();
     return addrRangeList;
