@@ -17,8 +17,8 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __INC_AME_LOGGER_H__
-#define __INC_AME_LOGGER_H__
+#ifndef __AME_LOGGER_H__
+#define __AME_LOGGER_H__
 
 #include <cassert>
 
@@ -94,4 +94,4 @@ protected:
 
 } inline logger;
 
-#endif // __INC_AME_LOGGER_H__
+#endif // __AME_LOGGER_H__

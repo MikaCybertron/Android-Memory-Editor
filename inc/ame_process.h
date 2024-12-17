@@ -17,8 +17,8 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __INC_AME_PROCESS_H__
-#define __INC_AME_PROCESS_H__
+#ifndef __AME_PROCESS_H__
+#define __AME_PROCESS_H__
 
 #include <sys/types.h>
 
@@ -37,4 +37,4 @@ int FreezeProcessByPackageName(std::string_view packageName);
 
 int ResumeProsessByPackageName(std::string_view packageName, int attempts = 3);
 
-#endif // __INC_AME_PROCESS_H__
+#endif // __AME_PROCESS_H__

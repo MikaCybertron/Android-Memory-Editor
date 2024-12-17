@@ -35,7 +35,7 @@ int main() {
         std::cout << std::format("PID of {} not find.", packageName) << std::endl;
     }
 
-    // Interact (test)
+    // Test
     std::string option;
     std::cout << "[1] Reset Package Name" << std::endl;
     std::cout << "[2] Find PID" << std::endl;
