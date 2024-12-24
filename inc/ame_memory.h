@@ -20,11 +20,10 @@
 #ifndef __AME_MEMORY_H__
 #define __AME_MEMORY_H__
 
+#include "ame_file.h"
 #include "ame_logger.h"
 
-#include <fcntl.h> // for open
-#include <sys/types.h>
-#include <unistd.h> // for close
+#include <fcntl.h>
 
 #include <cstdint>
 
@@ -75,18 +74,18 @@ template <typename T>
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    int memFile = open(memPath.c_str(), O_RDONLY);
-    if (memFile == -1) {
+    FileWrapper memFile(memPath, O_RDONLY);
+    if (!memFile.IsOpen()) {
         logger.Error("Failed to find address: failed to open {}", memPath);
         return std::nullopt;
     }
 
-    logger.Debug("Find address by value of {} start.", valueToFind);
+    logger.Info("Find address by value of {} start.", valueToFind);
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             T value = 0;
-            if (pread64(memFile, &value, sizeof(value), address) <= 0) {
+            if (memFile.Pread64(&value, sizeof(value), address) <= 0) {
                 continue;
             }
             if (value == valueToFind) {
@@ -95,9 +94,8 @@ template <typename T>
             }
         }
     }
-    logger.Debug("Find address end.");
+    logger.Info("Find address end.");
 
-    close(memFile);
     return addrList;
 };
 
@@ -121,18 +119,18 @@ template <typename T>
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    int memFile = open(memPath.c_str(), O_RDONLY);
-    if (memFile == -1) {
+    FileWrapper memFile(memPath, O_RDONLY);
+    if (!memFile.IsOpen()) {
         logger.Error("Failed to find address: failed to open {}", memPath);
         return std::nullopt;
     }
 
-    logger.Debug("Find address by value in ({}, {}) start.", minValue, maxValue);
+    logger.Info("Find address by value in ({}, {}) start.", minValue, maxValue);
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             T value = 0;
-            if (pread64(memFile, &value, sizeof(value), address) <= 0) {
+            if (memFile.Pread64(&value, sizeof(value), address) <= 0) {
                 continue;
             }
             if (minValue <= value && value <= maxValue) {
@@ -141,9 +139,8 @@ template <typename T>
             }
         }
     }
-    logger.Debug("Find address end.");
+    logger.Info("Find address end.");
 
-    close(memFile);
     return addrList;
 };
 
@@ -167,20 +164,20 @@ template <typename T>
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    int memFile = open(memPath.c_str(), O_RDONLY);
-    if (memFile == -1) {
+    FileWrapper memFile(memPath, O_RDONLY);
+    if (!memFile.IsOpen()) {
         logger.Error("Failed to find address: failed to open {}", memPath);
         return std::nullopt;
     }
 
-    logger.Debug("Find address with group of values start.");
+    logger.Info("Find address with group of values start.");
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             bool flag = true;
             for (size_t i = 0; i < items.size(); ++i) {
                 T value = 0;
-                if (pread64(memFile, &value, sizeof(value), address + sizeof(value) * i) <= 0 || value != items[i]) {
+                if (memFile.Pread64(&value, sizeof(value), address + sizeof(value) * i) <= 0 || value != items[i]) {
                     flag = false;
                     break;
                 }
@@ -190,9 +187,8 @@ template <typename T>
             }
         }
     }
-    logger.Debug("Find address end.");
+    logger.Info("Find address end.");
 
-    close(memFile);
     return addrList;
 };
 
@@ -205,17 +201,17 @@ template <typename T>
     requires std::is_arithmetic_v<T>
 [[nodiscard]] std::optional<AddrList> FilterAddrListByOffset(pid_t pid, const AddrList &listToFilter, T valueToFind, int64_t offset) {
     std::string memPath = std::format("/proc/{}/mem", pid);
-    int memFile = open(memPath.c_str(), O_RDONLY);
-    if (memFile == -1) {
+    FileWrapper memFile(memPath, O_RDONLY);
+    if (!memFile.IsOpen()) {
         logger.Error("Failed to filter address: failed to open {}", memPath);
         return std::nullopt;
     }
 
-    logger.Debug("Filter address by value of {} and offset of {} start.", valueToFind, offset);
+    logger.Info("Filter address by value of {} and offset of {} start.", valueToFind, offset);
     AddrList listToReturn;
     for (const auto &address : listToFilter) {
         T value = 0;
-        if (pread64(memFile, &value, sizeof(value), address + offset) <= 0) {
+        if (memFile.Pread64(&value, sizeof(value), address + offset) <= 0) {
             continue;
         }
         if (value == valueToFind) {
@@ -223,9 +219,8 @@ template <typename T>
             listToReturn.push_front(address);
         }
     }
-    logger.Debug("Filter address end.");
+    logger.Info("Filter address end.");
 
-    close(memFile);
     return listToReturn;
 };
 
@@ -254,17 +249,17 @@ template <typename T>
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    int memFile = open(memPath.c_str(), O_RDONLY);
-    if (memFile == -1) {
+    FileWrapper memFile(memPath, O_RDONLY);
+    if (!memFile.IsOpen()) {
         logger.Error("Failed to filter address: failed to open {}", memPath);
         return std::nullopt;
     }
 
-    logger.Debug("Filter address by value in ({}, {}) start.", minValue, maxValue);
+    logger.Info("Filter address by value in ({}, {}) start.", minValue, maxValue);
     AddrList listToReturn;
     for (const auto &address : listToFilter) {
         T value = 0;
-        if (pread64(memFile, &value, sizeof(value), address) <= 0) {
+        if (memFile.Pread64(&value, sizeof(value), address) <= 0) {
             continue;
         }
         if (minValue <= value && value <= maxValue) {
@@ -272,9 +267,8 @@ template <typename T>
             listToReturn.push_front(address);
         }
     }
-    logger.Debug("Filter address end.");
+    logger.Info("Filter address end.");
 
-    close(memFile);
     return listToReturn;
 };
 
@@ -295,15 +289,15 @@ int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSiz
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    int memFile = open(memPath.c_str(), O_WRONLY);
-    if (memFile == -1) {
+    FileWrapper memFile(memPath, O_WRONLY);
+    if (!memFile.IsOpen()) {
         logger.Error("Failed to write meory: failed to open {}", memPath);
         return -1;
     }
 
     int successCount = 0;
     for (int i = 1; const auto &address : addrList) {
-        if (pwrite64(memFile, &value, sizeof(value), address) != -1) {
+        if (memFile.Pwrite64(&value, sizeof(value), address) != -1) {
             ++successCount;
         } else {
             logger.Warning("The {} times write failed.", i);
@@ -312,7 +306,6 @@ int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSiz
             break;
         }
     }
-    close(memFile);
     return successCount;
 }
 
@@ -331,8 +324,8 @@ std::vector<int> WriteArrayAddress(pid_t pid, const AddrList &addrList, const st
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    int memFile = open(memPath.c_str(), O_WRONLY);
-    if (memFile == -1) {
+    FileWrapper memFile(memPath, O_WRONLY);
+    if (!memFile.IsOpen()) {
         logger.Error("Failed to write array address: failed to open {}", memPath);
         return {};
     }
@@ -341,15 +334,14 @@ std::vector<int> WriteArrayAddress(pid_t pid, const AddrList &addrList, const st
     successCountVec.reserve(std::distance(addrList.cbegin(), addrList.cend()));
     for (const auto &address : addrList) {
         int successCount = 0;
-        for (int i = 0; const auto &value : items) {
-            if (pwrite64(memFile, &value, sizeof(value), address + sizeof(value) * i) != -1) {
+        for (uint64_t offset = 0; const auto &value : items) {
+            if (memFile.Pwrite64(&value, sizeof(value), address + offset) != -1) {
                 ++successCount;
             }
-            ++i;
+            offset += sizeof(value);
         }
         successCountVec.push_back(successCount);
     }
-    close(memFile);
     return successCountVec;
 };
 

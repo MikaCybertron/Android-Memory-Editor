@@ -39,7 +39,7 @@
 std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
     DIR *procDir = opendir("/proc");
     if (procDir == nullptr) {
-        logger.Error("pid not find: {}:", strerror(errno));
+        logger.Error("pid not find: {}:", std::strerror(errno));
         return std::nullopt;
     }
 
@@ -60,9 +60,8 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
             continue;
         }
         std::getline(cmdlineFile, cmdline, '\0');
-        cmdlineFile.close();
         if (cmdline == packageName) {
-            result = atoi(entry->d_name);
+            result = std::atoi(entry->d_name);
             break;
         }
     }
@@ -80,7 +79,7 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
     }
 
     std::smatch matches;
-    const std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
+    std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
     for (std::string line; std::getline(statusFile, line);) {
         if (!std::regex_match(line, matches, stateRegex)) {
             continue;
@@ -95,7 +94,6 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
             return false;
         }
     }
-    // statusFile.close();
     return std::nullopt;
 }
 

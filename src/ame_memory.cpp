@@ -51,10 +51,9 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const st
         }
         size_t hyphenPos;
         uint64_t startAddr = std::stoull(line, &hyphenPos, 16);
-        uint64_t endAddr = strtoull(&line[hyphenPos + 1], nullptr, 16);
+        uint64_t endAddr = std::strtoull(&line[hyphenPos + 1], nullptr, 16);
         addrRangeList.emplace_front(startAddr, endAddr);
     }
-    mapsFile.close();
     return addrRangeList;
 }
 
