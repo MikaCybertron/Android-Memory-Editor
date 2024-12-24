@@ -40,7 +40,7 @@ int main() {
     std::cout << "[1] Reset Package Name" << std::endl;
     std::cout << "[2] Find PID" << std::endl;
     std::cout << "[3] Freeze Process" << std::endl;
-    std::cout << "[4] Resume Prosess" << std::endl;
+    std::cout << "[4] Resume Process" << std::endl;
     std::cout << "[5] Exit" << std::endl;
     while (true) {
         std::cout << "Enter an option in [1, 2, 3, 4, 5]" << std::endl;
@@ -62,7 +62,7 @@ int main() {
             FreezeProcessByPackageName(packageName);
 
         } else if (option == "4") {
-            ResumeProsessByPackageName(packageName);
+            ResumeProcessByPackageName(packageName);
 
         } else if (option == "5") {
             break;

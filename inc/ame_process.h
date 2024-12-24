@@ -31,10 +31,10 @@
 
 bool FreezeProcessByPid(pid_t pid);
 
-bool ResumeProsessByPid(pid_t pid, int attempts = 3);
+bool ResumeProcessByPid(pid_t pid, int attempts = 3);
 
 int FreezeProcessByPackageName(std::string_view packageName);
 
-int ResumeProsessByPackageName(std::string_view packageName, int attempts = 3);
+int ResumeProcessByPackageName(std::string_view packageName, int attempts = 3);
 
 #endif // __AME_PROCESS_H__

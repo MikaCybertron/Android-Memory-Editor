@@ -125,9 +125,9 @@ bool FreezeProcessByPid(pid_t pid) {
 }
 
 
-bool ResumeProsessByPid(pid_t pid, int attempts) {
+bool ResumeProcessByPid(pid_t pid, int attempts) {
     if (attempts < 1) {
-        logger.Error("Failed to resume prosess {}: attempts={} less than one.", pid, attempts);
+        logger.Error("Failed to resume process {}: attempts={} less than one.", pid, attempts);
         return false;
     }
     if (getuid() != 0) {
@@ -170,11 +170,11 @@ int FreezeProcessByPackageName(std::string_view packageName) {
  * @retval -1 Could not find PID by package name.
  * @retval -2 Resume failed.
  */
-int ResumeProsessByPackageName(std::string_view packageName, int attempts) {
+int ResumeProcessByPackageName(std::string_view packageName, int attempts) {
     auto pidOpt = FindPidByPackageName(packageName);
     if (!pidOpt.has_value()) {
         logger.Error("Failed to resume process: pid of {} not find.", packageName);
         return -1;
     }
-    return ResumeProsessByPid(*pidOpt, attempts) ? 0 : -2;
+    return ResumeProcessByPid(*pidOpt, attempts) ? 0 : -2;
 }
