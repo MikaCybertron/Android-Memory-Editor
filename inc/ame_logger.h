@@ -34,7 +34,7 @@ enum class LogLevel {
     OFF,
 };
 
-constexpr int VALID_LOG_LEVEL_COUNT = static_cast<int>(LogLevel::OFF);
+constexpr int VALID_LOG_LEVEL_COUNT = int(LogLevel::OFF);
 
 class Logger {
 public:
@@ -67,13 +67,10 @@ protected:
         if (level < _level) {
             return;
         }
-        assert(static_cast<int>(level) < VALID_LOG_LEVEL_COUNT);
+        assert(int(level) < VALID_LOG_LEVEL_COUNT);
         std::string message = std::vformat(format, std::make_format_args(args...));
-        (level == LogLevel::ERROR ? std::cerr : std::clog) << _colorStr[int(level)]                //
-                                                           << "[" << _levelStr[int(level)] << "] " // header
-                                                           << message                              //
-                                                           << "\033[39m"                           // default color
-                                                           << "\n";                                //
+        // "\033[39m" -> default color
+        (level == LogLevel::ERROR ? std::cerr : std::clog) << std::format("{}[{}] {}\033[39m\n", _colorStr[int(level)], _levelStr[int(level)], message);
     }
 
     static constexpr std::array<std::string, VALID_LOG_LEVEL_COUNT> _levelStr = {

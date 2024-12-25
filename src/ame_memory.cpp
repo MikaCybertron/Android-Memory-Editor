@@ -122,7 +122,7 @@ std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
             });
         }
         [[unlikely]] default: {
-            logger.Error("Unexpected Case For MemoryZone: {}", static_cast<int>(zone));
+            logger.Error("Unexpected Case For MemoryZone: {}", int(zone));
             assert(false && "Unexpected Case For MemoryZone");
             return std::nullopt;
         }
