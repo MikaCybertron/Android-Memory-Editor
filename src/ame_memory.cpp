@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024  Dicot0721
+ * Copyright (C) 2024, 2025  Dicot0721
  *
  * This file is part of Android-Memory-Editor.
  *
@@ -28,103 +28,73 @@
 
 #include <format>
 #include <fstream>
-#include <functional>
 #include <optional>
 #include <string>
 
+bool IsAreaBelongToPart(MemPart memPart, const std::string &vmAreaStr) {
+    switch (memPart) {
+        case MemPart::ALL: {
+            return true;
+        }
+        case MemPart::ASHMEM: {
+            return vmAreaStr.find("/dev/ashmem/") != std::string::npos //
+                && vmAreaStr.find("dalvik") == std::string::npos;
+        }
+        case MemPart::A_ANONMYOURS: {
+            return vmAreaStr.length() < 42;
+        }
+        case MemPart::B_BAD: {
+            return vmAreaStr.find("/system/fonts") != std::string::npos;
+        }
+        case MemPart::CODE_SYSTEM: {
+            return vmAreaStr.find("/system") != std::string::npos;
+        }
+        case MemPart::C_ALLOC: {
+            return vmAreaStr.find("[anon:libc_malloc]") != std::string::npos;
+        }
+        case MemPart::C_BSS: {
+            return vmAreaStr.find("[anon:.bss]") != std::string::npos;
+        }
+        case MemPart::C_DATA: {
+            return vmAreaStr.find("/data/") != std::string::npos;
+        }
+        case MemPart::C_HEAP: {
+            return vmAreaStr.find("[heap]") != std::string::npos;
+        }
+        case MemPart::JAVA_HEAP: {
+            return vmAreaStr.find("/dev/ashmem/") != std::string::npos;
+        }
+        case MemPart::STACK: {
+            return vmAreaStr.find("[stack]") != std::string::npos;
+        }
+        case MemPart::V: {
+            return vmAreaStr.find("/dev/kgsl-3d0") != std::string::npos;
+        }
+        [[unlikely]] default: {
+            assert(false && "Invalid value of MemPart: " && int(memPart));
+            return false;
+        }
+    }
+}
 
-std::optional<AddrRangeList> GetAddrRange(pid_t pid, std::function<bool(const std::string &)> predicate) {
+
+std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemPart memPart) {
     std::string mapsPath = std::format("/proc/{}/maps", pid);
     std::ifstream mapsFile(mapsPath);
     if (!mapsFile.is_open()) {
-        logger.Error("Get address range failed: failed to open {}:", mapsPath);
+        logger.Error("Failed to open [{}].", mapsPath);
         return std::nullopt;
     }
 
     AddrRangeList addrRangeList;
     for (std::string line; std::getline(mapsFile, line);) {
-        if (auto flagsPos = line.find("rw"); flagsPos == std::string::npos || flagsPos > 27) {
-            continue; // 27 is the max columns of vm_flags
-        }
-        if (!predicate(line)) {
-            continue;
+        if (line.find("rw") > 27 || !IsAreaBelongToPart(memPart, line)) {
+            continue; // 27 -> the max columns of vm_flags
         }
         size_t hyphenPos;
         uint64_t startAddr = std::stoull(line, &hyphenPos, 16);
         uint64_t endAddr = std::strtoull(&line[hyphenPos + 1], nullptr, 16);
-        addrRangeList.push_front({startAddr, endAddr});
+        addrRangeList.push_back({startAddr, endAddr});
     }
     return addrRangeList;
 }
-
-
-std::optional<AddrRangeList> GetAddrRangeByZone(pid_t pid, MemoryZone zone) {
-    switch (zone) {
-        case MemoryZone::ALL: {
-            return GetAddrRange(pid, [](auto &) { //
-                return true;
-            });
-        }
-        case MemoryZone::ASHMEM: {
-            return GetAddrRange(pid, [](auto &str) {                 //
-                return str.find("/dev/ashmem/") != std::string::npos //
-                    && str.find("dalvik") == std::string::npos;
-            });
-        }
-        case MemoryZone::A_ANONMYOURS: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.length() < 42;
-            });
-        }
-        case MemoryZone::B_BAD: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("/system/fonts") != std::string::npos;
-            });
-        }
-        case MemoryZone::CODE_SYSTEM: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("/system") != std::string::npos;
-            });
-        }
-        case MemoryZone::C_ALLOC: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("[anon:libc_malloc]") != std::string::npos;
-            });
-        }
-        case MemoryZone::C_BSS: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("[anon:.bss]") != std::string::npos;
-            });
-        }
-        case MemoryZone::C_DATA: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("/data/") != std::string::npos;
-            });
-        }
-        case MemoryZone::C_HEAP: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("[heap]") != std::string::npos;
-            });
-        }
-        case MemoryZone::JAVA_HEAP: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("/dev/ashmem/") != std::string::npos;
-            });
-        }
-        case MemoryZone::STACK: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("[stack]") != std::string::npos;
-            });
-        }
-        case MemoryZone::V: {
-            return GetAddrRange(pid, [](auto &str) { //
-                return str.find("/dev/kgsl-3d0") != std::string::npos;
-            });
-        }
-        [[unlikely]] default: {
-            logger.Error("Unexpected Case For MemoryZone: {}", int(zone));
-            assert(false && "Unexpected Case For MemoryZone");
-            return std::nullopt;
-        }
-    }
-};

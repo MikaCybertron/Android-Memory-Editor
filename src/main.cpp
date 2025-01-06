@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024  Dicot0721
+ * Copyright (C) 2024, 2025  Dicot0721
  *
  * This file is part of Android-Memory-Editor.
  *
@@ -24,12 +24,11 @@
 #include <format>
 #include <iostream>
 
-
 int main() {
     // Init
-    std::string packageName = "com.popcap.pvz_na";
+    std::string packageName("com.popcap.pvz_na");
     std::cout << "Package name: " << packageName << std::endl;
-    if (auto pidOpt = FindPidByPackageName(packageName); pidOpt.has_value()) {
+    if (auto pidOpt = FindPidByProcessName(packageName); pidOpt.has_value()) {
         std::cout << std::format("PID of {}: {}", packageName, *pidOpt) << std::endl;
     } else {
         std::cout << std::format("PID of {} not find.", packageName) << std::endl;
@@ -52,17 +51,17 @@ int main() {
             std::cout << "New package name: " << packageName << std::endl;
 
         } else if (option == "2") {
-            if (auto pidOpt = FindPidByPackageName(packageName); pidOpt.has_value()) {
+            if (auto pidOpt = FindPidByProcessName(packageName); pidOpt.has_value()) {
                 std::cout << std::format("PID of {}: {}", packageName, *pidOpt) << std::endl;
             } else {
                 std::cout << std::format("PID of {} not find.", packageName) << std::endl;
             }
 
         } else if (option == "3") {
-            FreezeProcessByPackageName(packageName);
+            FreezeProcessByName(packageName);
 
         } else if (option == "4") {
-            ResumeProcessByPackageName(packageName);
+            ResumeProcessByName(packageName);
 
         } else if (option == "5") {
             break;

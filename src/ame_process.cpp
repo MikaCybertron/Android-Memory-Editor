@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024  Dicot0721
+ * Copyright (C) 2024, 2025  Dicot0721
  *
  * This file is part of Android-Memory-Editor.
  *
@@ -21,7 +21,7 @@
 #include "ame_logger.h"
 
 #include <dirent.h>
-#include <unistd.h> // for getuid, usleep
+#include <sys/types.h>
 
 #include <cerrno>
 #include <csignal>
@@ -30,16 +30,22 @@
 
 #include <format>
 #include <fstream>
+#include <functional>
 #include <optional>
 #include <regex>
 #include <string>
 #include <string_view>
+#include <thread>
 
-
-std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
+/**
+ * @brief Find the PID of a process by its name.
+ * @param [in] processName  Process name, which could be package name for Android app.
+ * @return The std::optional with value of the PID, or std::nullopt if it could not be found.
+ */
+std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
     DIR *procDir = opendir("/proc");
     if (procDir == nullptr) {
-        logger.Error("pid not find: {}:", std::strerror(errno));
+        logger.Error("Failed to open [/proc]: {}.", std::strerror(errno));
         return std::nullopt;
     }
 
@@ -49,18 +55,19 @@ std::optional<pid_t> FindPidByPackageName(std::string_view packageName) {
         if (entry->d_type != DT_DIR) {
             continue; // not a directory
         }
-        std::string_view pidStr(entry->d_name);
-        if (pidStr.find_first_not_of("0123456789") != std::string_view::npos) {
+        std::string_view dirname(entry->d_name);
+        if (dirname.find_first_not_of("0123456789") != std::string_view::npos) {
             continue; // not numeric name
         }
-        std::string cmdlinePath = std::format("/proc/{}/cmdline", pidStr);
+
+        std::string cmdlinePath = std::format("/proc/{}/cmdline", dirname);
         std::ifstream cmdlineFile(cmdlinePath);
         if (!cmdlineFile.is_open()) {
-            logger.Error("Failed to open: {}:", cmdlinePath);
+            logger.Error("Failed to open [{}].", cmdlinePath);
             continue;
         }
         std::getline(cmdlineFile, cmdline, '\0');
-        if (cmdline == packageName) {
+        if (cmdline == processName) {
             result = std::atoi(entry->d_name);
             break;
         }
@@ -74,7 +81,7 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
     std::string statusPath = std::format("/proc/{}/status", pid);
     std::ifstream statusFile(statusPath);
     if (!statusFile.is_open()) {
-        logger.Error("Failed to open: {}:", statusPath);
+        logger.Error("Failed to open [{}].", statusPath);
         return std::nullopt;
     }
 
@@ -99,18 +106,15 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
 
 
 bool FreezeProcessByPid(pid_t pid) {
-    if (getuid() != 0) {
-        logger.Error("Failed to freeze process: not root.");
-        return false;
-    }
+    using namespace std::chrono_literals;
 
     if (kill(pid, SIGSTOP) == -1) {
-        logger.Error("Failed to send SIGSTOP to process {}.", pid);
+        logger.Error("Failed to send SIGSTOP to process {}: {}.", pid, std::strerror(errno));
         return false;
     }
-    logger.Debug("Success to send SIGSTOP to process {}.", pid);
+    logger.Debug("Succeeded in sending SIGSTOP to process {}.", pid);
 
-    usleep(1000 * 10); // sleep 10ms, wait for process status
+    std::this_thread::sleep_for(10ms); // wait for process status
     auto isStopped = IsProcessStopped(pid);
     if (!isStopped.has_value()) {
         logger.Error("Failed to get state of process {}.", pid);
@@ -120,61 +124,53 @@ bool FreezeProcessByPid(pid_t pid) {
         logger.Error("Failed to freeze process {}.", pid);
         return false;
     }
-    logger.Debug("Process {} froze successfully.", pid);
+    logger.Info("Succeeded in freezing process {}.", pid);
     return true;
 }
 
 
-bool ResumeProcessByPid(pid_t pid, int attempts) {
-    if (attempts < 1) {
-        logger.Error("Failed to resume process {}: attempts={} less than one.", pid, attempts);
+bool ResumeProcessByPid(pid_t pid) {
+    using namespace std::chrono_literals;
+
+    if (kill(pid, SIGCONT) == -1) {
+        logger.Error("Failed to send SIGCONT to process {}: {}.", pid, std::strerror(errno));
         return false;
     }
-    if (getuid() != 0) {
-        logger.Error("Failed to resume process: not root.");
+    logger.Debug("Succeeded in sending SIGCONT to process {}.", pid);
+
+    std::this_thread::sleep_for(10ms); // wait for process status
+    auto isStopped = IsProcessStopped(pid);
+    if (!isStopped.has_value()) {
+        logger.Error("Failed to get state of process {}.", pid);
         return false;
     }
-    for (int i = 0; i < attempts; ++i) {
-        if (kill(pid, SIGCONT) == -1) {
-            continue;
-        }
-        usleep(1000); // sleep 1ms, wait for process status
-        if (auto isStopped = IsProcessStopped(pid); isStopped.has_value() && !*isStopped) {
-            logger.Debug("Process {} resumed successfully.", pid);
-            return true;
-        }
-        usleep(1000 * 100); // sleep 100ms, wait for another try
+    if (*isStopped) {
+        logger.Error("Failed to resume process {}.", pid);
+        return false;
     }
-    logger.Error("Failed to resume process {} after {} attempts.", pid, attempts);
-    return false;
+    logger.Info("Succeeded in resuming process {}.", pid);
+    return true;
 }
 
 
 /**
- * @retval 0 Freeze successfully.
- * @retval -1 Could not find PID by package name.
- * @retval -2 Freeze failed.
+ * @retval 0  The operation succeeded.
+ * @retval -1  Could not find the process.
+ * @retval -2  The operation failed.
  */
-int FreezeProcessByPackageName(std::string_view packageName) {
-    auto pidOpt = FindPidByPackageName(packageName);
+int DoWithProcessName(std::string_view processName, std::function<bool(pid_t)> operation) {
+    auto pidOpt = FindPidByProcessName(processName);
     if (!pidOpt.has_value()) {
-        logger.Error("Failed to freeze process: pid of {} not find.", packageName);
+        logger.Error("Cannot find process [{}].", processName);
         return -1;
     }
-    return FreezeProcessByPid(*pidOpt) ? 0 : -2;
+    return operation(*pidOpt) ? 0 : -2;
 }
 
+int FreezeProcessByName(std::string_view processName) {
+    return DoWithProcessName(processName, FreezeProcessByPid);
+}
 
-/**
- * @retval 0 Resume successfully.
- * @retval -1 Could not find PID by package name.
- * @retval -2 Resume failed.
- */
-int ResumeProcessByPackageName(std::string_view packageName, int attempts) {
-    auto pidOpt = FindPidByPackageName(packageName);
-    if (!pidOpt.has_value()) {
-        logger.Error("Failed to resume process: pid of {} not find.", packageName);
-        return -1;
-    }
-    return ResumeProcessByPid(*pidOpt, attempts) ? 0 : -2;
+int ResumeProcessByName(std::string_view processName) {
+    return DoWithProcessName(processName, ResumeProcessByPid);
 }

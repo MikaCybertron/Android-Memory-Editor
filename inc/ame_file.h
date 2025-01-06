@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024  Dicot0721
+ * Copyright (C) 2024, 2025  Dicot0721
  *
  * This file is part of Android-Memory-Editor.
  *
@@ -66,8 +66,8 @@ public:
     /**
      * @brief Read NBYTES into BUF from FD at the given position OFFSET without changing the file pointer.
      * @return The number read.
-     * @retval -1 for errors.
-     * @retval 0 for EOF.
+     * @retval -1  for errors.
+     * @retval 0  for EOF.
      */
     ssize_t Pread64(void *buf, size_t nbytes, off64_t offset) const {
         return pread64(_fd, buf, nbytes, offset);

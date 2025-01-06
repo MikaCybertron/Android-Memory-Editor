@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024  Dicot0721
+ * Copyright (C) 2024, 2025  Dicot0721
  *
  * This file is part of Android-Memory-Editor.
  *
@@ -38,6 +38,10 @@ constexpr int VALID_LOG_LEVEL_COUNT = int(LogLevel::OFF);
 
 class Logger {
 public:
+    [[nodiscard]] LogLevel GetLevel() const noexcept {
+        return _level;
+    }
+
     void SetLevel(LogLevel level) noexcept {
         _level = level;
     }
@@ -69,8 +73,9 @@ protected:
         }
         assert(int(level) < VALID_LOG_LEVEL_COUNT);
         std::string message = std::vformat(format, std::make_format_args(args...));
+        std::ostream &os = (level == LogLevel::ERROR) ? std::cerr : std::clog;
         // "\033[39m" -> default color
-        (level == LogLevel::ERROR ? std::cerr : std::clog) << std::format("{}[{}] {}\033[39m\n", _colorStr[int(level)], _levelStr[int(level)], message);
+        os << std::format("{}[{}] {}\033[39m\n", _colorStr[int(level)], _levelStr[int(level)], message);
     }
 
     static constexpr std::array<std::string, VALID_LOG_LEVEL_COUNT> _levelStr = {

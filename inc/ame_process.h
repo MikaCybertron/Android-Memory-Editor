@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2024  Dicot0721
+ * Copyright (C) 2024, 2025  Dicot0721
  *
  * This file is part of Android-Memory-Editor.
  *
@@ -22,19 +22,22 @@
 
 #include <sys/types.h>
 
+#include <functional>
 #include <optional>
 #include <string_view>
 
-[[nodiscard]] std::optional<pid_t> FindPidByPackageName(std::string_view packageName);
+[[nodiscard]] std::optional<pid_t> FindPidByProcessName(std::string_view processName);
 
 [[nodiscard]] std::optional<bool> IsProcessStopped(pid_t pid);
 
 bool FreezeProcessByPid(pid_t pid);
 
-bool ResumeProcessByPid(pid_t pid, int attempts = 3);
+bool ResumeProcessByPid(pid_t pid);
 
-int FreezeProcessByPackageName(std::string_view packageName);
+int DoWithProcessName(std::string_view processName, std::function<bool(pid_t)> operation);
 
-int ResumeProcessByPackageName(std::string_view packageName, int attempts = 3);
+int FreezeProcessByName(std::string_view processName);
+
+int ResumeProcessByName(std::string_view processName);
 
 #endif // __AME_PROCESS_H__
