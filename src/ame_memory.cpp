@@ -71,7 +71,7 @@ bool IsAreaBelongToPart(MemPart memPart, const std::string &vmAreaStr) {
             return vmAreaStr.find("/dev/kgsl-3d0") != std::string::npos;
         }
         [[unlikely]] default: {
-            assert(false && "Invalid value of MemPart: " && int(memPart));
+            assert(false && "invalid value for MemPart");
             return false;
         }
     }

@@ -164,7 +164,7 @@ template <typename T>
     }
 
     logger.Info("Find address with group of values start.");
-    std::unique_ptr<T[]> buf = std::make_unique_for_overwrite<T[]>(items.size());
+    auto buf = std::make_unique_for_overwrite<T[]>(items.size());
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {

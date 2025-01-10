@@ -23,6 +23,7 @@
 #include <cassert>
 
 #include <array>
+#include <chrono>
 #include <format>
 #include <iostream>
 
@@ -35,6 +36,7 @@ enum class LogLevel {
 };
 
 constexpr int VALID_LOG_LEVEL_COUNT = int(LogLevel::OFF);
+
 
 class Logger {
 public:
@@ -67,15 +69,21 @@ public:
     }
 
 protected:
+    /**
+     * @todo Use std::print (since C++23).
+     */
     void _Output(LogLevel level, std::string_view format, auto &&...args) {
         if (level < _level) {
             return;
         }
         assert(int(level) < VALID_LOG_LEVEL_COUNT);
+
+        std::ostream &os = (level < LogLevel::ERROR) ? std::clog : std::cerr;
+        auto now = std::chrono::system_clock::now();
         std::string message = std::vformat(format, std::make_format_args(args...));
-        std::ostream &os = (level == LogLevel::ERROR) ? std::cerr : std::clog;
+
         // "\033[39m" -> default color
-        os << std::format("{}[{}] {}\033[39m\n", _colorStr[int(level)], _levelStr[int(level)], message);
+        os << std::format("{}[{:%T}][{}] {}\033[39m\n", _colorStr[int(level)], now, _levelStr[int(level)], message);
     }
 
     static constexpr std::array<std::string, VALID_LOG_LEVEL_COUNT> _levelStr = {
