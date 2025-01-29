@@ -28,7 +28,6 @@
 #include <cstdint>
 
 #include <format>
-#include <memory>
 #include <optional>
 #include <utility>
 #include <vector>
@@ -164,12 +163,11 @@ template <typename T>
     }
 
     logger.Info("Find address with group of values start.");
-    auto buf = std::make_unique_for_overwrite<T[]>(items.size());
+    std::vector<T> buffer(items.size());
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
-            if (memFile.Pread64(buf.get(), items.size() * sizeof(T), address) > 0 //
-                && std::equal(items.cbegin(), items.cend(), buf.get())) {
+            if (memFile.Pread64(buffer.data(), buffer.size() * sizeof(T), address) > 0 && buffer == items) {
                 logger.Debug("Find Address: 0x{:X}", address);
                 addrList.push_back(address);
             }

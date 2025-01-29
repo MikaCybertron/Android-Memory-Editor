@@ -17,7 +17,6 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "ame_logger.h"
 #include "ame_memory.h"
 #include "ame_process.h"
 
