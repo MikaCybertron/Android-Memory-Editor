@@ -9,4 +9,5 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 
 aux_source_directory(src SRC_DIR)
 add_executable(ame ${SRC_DIR})
+
 target_include_directories(ame PRIVATE inc)

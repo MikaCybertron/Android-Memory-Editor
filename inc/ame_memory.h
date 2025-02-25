@@ -29,6 +29,7 @@
 
 #include <format>
 #include <optional>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
@@ -72,28 +73,28 @@ template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FindAddress(pid_t pid, MemPart memPart, T valueToFind) {
     auto addrRangeList = GetAddrRange(pid, memPart);
     if (!addrRangeList.has_value()) {
-        logger.Error("Failed to find address: failed to get address range.");
+        LOG_ERROR("Failed to find address: failed to get address range.");
         return std::nullopt;
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile(memPath, O_RDONLY);
     if (!memFile.IsOpen()) {
-        logger.Error("Failed to find address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
         return std::nullopt;
     }
 
-    logger.Info("Find address by value of ({}) start.", valueToFind);
+    LOG_INFO("Find address by value of ({}) start.", valueToFind);
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
-            T value{};
+            T value;
             if (memFile.Pread64(&value, sizeof(value), address) > 0 && value == valueToFind) {
                 addrList.push_back(address);
             }
         }
     }
-    logger.Info("Find address end.");
+    LOG_INFO("Find address end.");
 
     return addrList;
 }
@@ -106,35 +107,35 @@ template <Arithmetic T>
 template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FindAddressByRange(pid_t pid, MemPart memPart, T minValue, T maxValue) {
     if (minValue > maxValue) {
-        logger.Error("Failed to find address: minValue > maxValue. ({} > {})", minValue, maxValue);
+        LOG_ERROR("Failed to find address: minValue > maxValue. ({} > {})", minValue, maxValue);
         return std::nullopt;
     }
 
     auto addrRangeList = GetAddrRange(pid, memPart);
     if (!addrRangeList.has_value()) {
-        logger.Error("Failed to find address: failed to get address range.");
+        LOG_ERROR("Failed to find address: failed to get address range.");
         return std::nullopt;
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile(memPath, O_RDONLY);
     if (!memFile.IsOpen()) {
-        logger.Error("Failed to find address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
         return std::nullopt;
     }
 
-    logger.Info("Find address by value in ({}, {}) start.", minValue, maxValue);
+    LOG_INFO("Find address by value in ({}, {}) start.", minValue, maxValue);
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
-            T value{};
+            T value;
             if (memFile.Pread64(&value, sizeof(value), address) > 0 //
                 && minValue <= value && value <= maxValue) {
                 addrList.push_back(address);
             }
         }
     }
-    logger.Info("Find address end.");
+    LOG_INFO("Find address end.");
 
     return addrList;
 }
@@ -147,35 +148,35 @@ template <Arithmetic T>
 template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FindArrayAddress(pid_t pid, MemPart memPart, const std::vector<T> &items) {
     if (items.empty()) {
-        logger.Error("Failed to find address: items is empty.");
+        LOG_ERROR("Failed to find address: items is empty.");
         return std::nullopt;
     }
 
     auto addrRangeList = GetAddrRange(pid, memPart);
     if (!addrRangeList.has_value()) {
-        logger.Error("Failed to find address: failed to get address range.");
+        LOG_ERROR("Failed to find address: failed to get address range.");
         return std::nullopt;
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile(memPath, O_RDONLY);
     if (!memFile.IsOpen()) {
-        logger.Error("Failed to find address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
         return std::nullopt;
     }
 
-    logger.Info("Find address with group of values start.");
+    LOG_INFO("Find address with group of values start.");
     std::vector<T> buffer(items.size());
     AddrList addrList;
     for (const auto &[beginAddr, endAddr] : *addrRangeList) {
         for (uint64_t address = beginAddr; address <= endAddr; address += sizeof(int32_t)) {
             if (memFile.Pread64(buffer.data(), buffer.size() * sizeof(T), address) > 0 && buffer == items) {
-                logger.Debug("Find Address: 0x{:X}", address);
+                LOG_DEBUG("Find Address: 0x{:X}", address);
                 addrList.push_back(address);
             }
         }
     }
-    logger.Info("Find address end.");
+    LOG_INFO("Find address end.");
 
     return addrList;
 }
@@ -190,20 +191,20 @@ template <Arithmetic T>
     std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile(memPath, O_RDONLY);
     if (!memFile.IsOpen()) {
-        logger.Error("Failed to filter address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to filter address: failed to open [{}].", memPath);
         return std::nullopt;
     }
 
-    logger.Info("Filter address by value of ({}) and offset of ({}) start.", valueToFind, offset);
+    LOG_INFO("Filter address by value of ({}) and offset of ({}) start.", valueToFind, offset);
     AddrList listToReturn;
     for (const auto &address : listToFilter) {
-        T value{};
+        T value;
         if (memFile.Pread64(&value, sizeof(value), address + offset) > 0 && value == valueToFind) {
-            logger.Debug("Find Address: 0x{:X}", address);
+            LOG_DEBUG("Find Address: 0x{:X}", address);
             listToReturn.push_back(address);
         }
     }
-    logger.Info("Filter address end.");
+    LOG_INFO("Filter address end.");
 
     return listToReturn;
 }
@@ -226,28 +227,28 @@ template <Arithmetic T>
 template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FilterAddrListByRange(pid_t pid, const AddrList &listToFilter, T minValue, T maxValue) {
     if (minValue > maxValue) {
-        logger.Error("Failed to filter address: minValue > maxValue. ({} > {})", minValue, maxValue);
+        LOG_ERROR("Failed to filter address: minValue > maxValue. ({} > {})", minValue, maxValue);
         return std::nullopt;
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile(memPath, O_RDONLY);
     if (!memFile.IsOpen()) {
-        logger.Error("Failed to filter address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to filter address: failed to open [{}].", memPath);
         return std::nullopt;
     }
 
-    logger.Info("Filter address by value in ({}, {}) start.", minValue, maxValue);
+    LOG_INFO("Filter address by value in ({}, {}) start.", minValue, maxValue);
     AddrList listToReturn;
     for (const auto &address : listToFilter) {
-        T value{};
+        T value;
         if (memFile.Pread64(&value, sizeof(value), address) > 0 //
             && minValue <= value && value <= maxValue) {
-            logger.Debug("Find Address: 0x{:X}", address);
+            LOG_DEBUG("Find Address: 0x{:X}", address);
             listToReturn.push_back(address);
         }
     }
-    logger.Info("Filter address end.");
+    LOG_INFO("Filter address end.");
 
     return listToReturn;
 }
@@ -263,14 +264,14 @@ template <Arithmetic T>
 template <Arithmetic T>
 int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSize = 1) {
     if (groupSize < 1) {
-        logger.Error("Failed to write meory: groupSize ({}) less than one.", groupSize);
+        LOG_ERROR("Failed to write meory: groupSize ({}) less than one.", groupSize);
         return -1;
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile(memPath, O_WRONLY);
     if (!memFile.IsOpen()) {
-        logger.Error("Failed to write meory: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to write meory: failed to open [{}].", memPath);
         return -1;
     }
 
@@ -295,14 +296,14 @@ int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSiz
 template <Arithmetic T>
 int WriteArrayAddress(pid_t pid, const AddrList &addrList, const std::vector<T> &items) {
     if (items.empty()) {
-        logger.Error("Failed to write array address: items is empty.");
+        LOG_ERROR("Failed to write array address: items is empty.");
         return -1;
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile(memPath, O_WRONLY);
     if (!memFile.IsOpen()) {
-        logger.Error("Failed to write array address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to write array address: failed to open [{}].", memPath);
         return -1;
     }
 

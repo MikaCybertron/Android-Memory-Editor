@@ -34,7 +34,6 @@
 #include <optional>
 #include <regex>
 #include <string>
-#include <string_view>
 #include <thread>
 
 namespace ame {
@@ -47,13 +46,13 @@ namespace ame {
 std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
     DIR *procDir = opendir("/proc");
     if (procDir == nullptr) {
-        logger.Error("Failed to open [/proc]: {}.", std::strerror(errno));
+        LOG_ERROR("Failed to open [/proc]: {}.", std::strerror(errno));
         return std::nullopt;
     }
 
     std::string cmdline;
     std::optional<pid_t> result;
-    for (dirent *entry = nullptr; (entry = readdir(procDir)) != nullptr;) {
+    for (dirent *entry; (entry = readdir(procDir)) != nullptr;) {
         if (entry->d_type != DT_DIR) {
             continue; // not a directory
         }
@@ -65,7 +64,7 @@ std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
         std::string cmdlinePath = std::format("/proc/{}/cmdline", dirname);
         std::ifstream cmdlineFile(cmdlinePath);
         if (!cmdlineFile.is_open()) {
-            logger.Error("Failed to open [{}].", cmdlinePath);
+            LOG_ERROR("Failed to open [{}].", cmdlinePath);
             continue;
         }
         std::getline(cmdlineFile, cmdline, '\0');
@@ -83,23 +82,23 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
     std::string statusPath = std::format("/proc/{}/status", pid);
     std::ifstream statusFile(statusPath);
     if (!statusFile.is_open()) {
-        logger.Error("Failed to open [{}].", statusPath);
+        LOG_ERROR("Failed to open [{}].", statusPath);
         return std::nullopt;
     }
 
     std::smatch matches;
-    std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
+    static const std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
     for (std::string line; std::getline(statusFile, line);) {
         if (!std::regex_match(line, matches, stateRegex)) {
             continue;
         }
         std::string stateCode = matches.str(1);
         if (stateCode == "T") {
-            logger.Debug("Process {} is in stopped state.", pid);
+            LOG_DEBUG("Process {} is in stopped state.", pid);
             return true;
         } else {
             std::string state = matches.str(2);
-            logger.Debug("Process {} is not in stopped state: {} ({}).", pid, stateCode, state);
+            LOG_DEBUG("Process {} is not in stopped state: {} ({}).", pid, stateCode, state);
             return false;
         }
     }
@@ -111,22 +110,22 @@ bool FreezeProcessByPid(pid_t pid) {
     using namespace std::chrono_literals;
 
     if (kill(pid, SIGSTOP) == -1) {
-        logger.Error("Failed to send SIGSTOP to process {}: {}.", pid, std::strerror(errno));
+        LOG_ERROR("Failed to send SIGSTOP to process {}: {}.", pid, std::strerror(errno));
         return false;
     }
-    logger.Debug("Succeeded in sending SIGSTOP to process {}.", pid);
+    LOG_DEBUG("Succeeded in sending SIGSTOP to process {}.", pid);
 
     std::this_thread::sleep_for(10ms); // wait for process status
     auto isStopped = IsProcessStopped(pid);
     if (!isStopped.has_value()) {
-        logger.Error("Failed to get state of process {}.", pid);
+        LOG_ERROR("Failed to get state of process {}.", pid);
         return false;
     }
     if (!*isStopped) {
-        logger.Error("Failed to freeze process {}.", pid);
+        LOG_ERROR("Failed to freeze process {}.", pid);
         return false;
     }
-    logger.Info("Succeeded in freezing process {}.", pid);
+    LOG_INFO("Succeeded in freezing process {}.", pid);
     return true;
 }
 
@@ -135,22 +134,22 @@ bool ResumeProcessByPid(pid_t pid) {
     using namespace std::chrono_literals;
 
     if (kill(pid, SIGCONT) == -1) {
-        logger.Error("Failed to send SIGCONT to process {}: {}.", pid, std::strerror(errno));
+        LOG_ERROR("Failed to send SIGCONT to process {}: {}.", pid, std::strerror(errno));
         return false;
     }
-    logger.Debug("Succeeded in sending SIGCONT to process {}.", pid);
+    LOG_DEBUG("Succeeded in sending SIGCONT to process {}.", pid);
 
     std::this_thread::sleep_for(10ms); // wait for process status
     auto isStopped = IsProcessStopped(pid);
     if (!isStopped.has_value()) {
-        logger.Error("Failed to get state of process {}.", pid);
+        LOG_ERROR("Failed to get state of process {}.", pid);
         return false;
     }
     if (*isStopped) {
-        logger.Error("Failed to resume process {}.", pid);
+        LOG_ERROR("Failed to resume process {}.", pid);
         return false;
     }
-    logger.Info("Succeeded in resuming process {}.", pid);
+    LOG_INFO("Succeeded in resuming process {}.", pid);
     return true;
 }
 
@@ -163,7 +162,7 @@ bool ResumeProcessByPid(pid_t pid) {
 int DoWithProcessName(std::string_view processName, std::function<bool(pid_t)> operation) {
     auto pidOpt = FindPidByProcessName(processName);
     if (!pidOpt.has_value()) {
-        logger.Error("Cannot find process [{}].", processName);
+        LOG_ERROR("Cannot find process [{}].", processName);
         return -1;
     }
     return operation(*pidOpt) ? 0 : -2;

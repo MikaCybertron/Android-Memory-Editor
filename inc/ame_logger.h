@@ -20,84 +20,89 @@
 #ifndef __AME_LOGGER_H__
 #define __AME_LOGGER_H__
 
-#include <cassert>
-
-#include <array>
 #include <chrono>
 #include <format>
 #include <iostream>
+#include <source_location>
+
+#define LOG_DEBUG(...) ame::Logger::Instance().Debug(std::source_location::current(), __VA_ARGS__)
+#define LOG_INFO(...) ame::Logger::Instance().Info(std::source_location::current(), __VA_ARGS__)
+#define LOG_WARN(...) ame::Logger::Instance().Warn(std::source_location::current(), __VA_ARGS__)
+#define LOG_ERROR(...) ame::Logger::Instance().Error(std::source_location::current(), __VA_ARGS__)
 
 namespace ame {
 
 enum class LogLevel {
     DEBUG,
     INFO,
-    WARNING,
+    WARN,
     ERROR,
     OFF,
 };
 
-constexpr int VALID_LOG_LEVEL_COUNT = int(LogLevel::OFF);
-
-
 class Logger {
 public:
-    [[nodiscard]] LogLevel GetLevel() const noexcept { return _level; }
+    Logger(const Logger &) = delete;
+    Logger(Logger &&) = delete;
+    Logger &operator=(const Logger &) = delete;
+    Logger &operator=(Logger &&) = delete;
+
+    [[nodiscard]] [[gnu::visibility("default")]] static Logger &Instance() {
+        static Logger logger;
+        return logger;
+    }
+
+    [[nodiscard]] LogLevel Level() const noexcept { return _level; }
 
     void SetLevel(LogLevel level) noexcept { _level = level; }
 
     template <typename... Args>
-    void Debug(std::format_string<Args...> format, Args &&...args) {
-        _Output(LogLevel::DEBUG, format.get(), std::forward<Args>(args)...);
+    void Debug(std::source_location location, std::format_string<Args...> format, Args &&...args) {
+        Output(location, LogLevel::DEBUG, format.get(), std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void Info(std::format_string<Args...> format, Args &&...args) {
-        _Output(LogLevel::INFO, format.get(), std::forward<Args>(args)...);
+    void Info(std::source_location location, std::format_string<Args...> format, Args &&...args) {
+        Output(location, LogLevel::INFO, format.get(), std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void Warning(std::format_string<Args...> format, Args &&...args) {
-        _Output(LogLevel::WARNING, format.get(), std::forward<Args>(args)...);
+    void Warn(std::source_location location, std::format_string<Args...> format, Args &&...args) {
+        Output(location, LogLevel::WARN, format.get(), std::forward<Args>(args)...);
     }
 
     template <typename... Args>
-    void Error(std::format_string<Args...> format, Args &&...args) {
-        _Output(LogLevel::ERROR, format.get(), std::forward<Args>(args)...);
+    void Error(std::source_location location, std::format_string<Args...> format, Args &&...args) {
+        Output(location, LogLevel::ERROR, format.get(), std::forward<Args>(args)...);
     }
 
 protected:
-    void _Output(LogLevel level, std::string_view format, auto &&...args) {
+    Logger() = default;
+
+    void Output(std::source_location location, LogLevel level, std::string_view format, auto &&...args) {
         if (level < _level) {
             return;
         }
-        assert(int(level) < VALID_LOG_LEVEL_COUNT);
 
         std::ostream &stream = (level < LogLevel::ERROR) ? std::clog : std::cerr;
         auto now = std::chrono::system_clock::now();
         std::string message = std::vformat(format, std::make_format_args(args...));
 
         // "\033[39m" -> default color
-        stream << std::format("{}[{:%T}][{}] {}\033[39m\n", _colorStr[int(level)], now, _levelStr[int(level)], message);
+        stream << std::format("{}[{:%T}][{}] [{}] {}\033[39m\n", _colorStr[(int)level], now, _levelChar[(int)level], location.function_name(), message);
     }
 
-    static constexpr std::array<std::string, VALID_LOG_LEVEL_COUNT> _levelStr = {
-        "DEBUG",
-        "INFO",
-        "WARNING",
-        "ERROR",
-    };
-
-    static constexpr std::array<std::string, VALID_LOG_LEVEL_COUNT> _colorStr = {
+    static constexpr std::string_view _colorStr[4] = {
         "\033[32m", // green
         "",
         "\033[33m", // yellow
         "\033[31m", // red
     };
 
-    LogLevel _level = LogLevel::DEBUG;
+    static constexpr char _levelChar[4] = {'D', 'I', 'W', 'E'};
 
-} inline logger;
+    LogLevel _level = LogLevel::DEBUG;
+};
 
 } // namespace ame
 

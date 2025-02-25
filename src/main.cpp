@@ -23,9 +23,9 @@
 #include <format>
 #include <iostream>
 
-using namespace ame;
-
 int main() {
+    using namespace ame;
+
     // Init
     std::string packageName("com.popcap.pvz_na");
     std::cout << "Package name: " << packageName << std::endl;

@@ -84,7 +84,7 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemPart memPart) {
     std::string mapsPath = std::format("/proc/{}/maps", pid);
     std::ifstream mapsFile(mapsPath);
     if (!mapsFile.is_open()) {
-        logger.Error("Failed to open [{}].", mapsPath);
+        LOG_ERROR("Failed to open [{}].", mapsPath);
         return std::nullopt;
     }
 
