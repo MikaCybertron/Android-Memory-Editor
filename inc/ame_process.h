@@ -26,6 +26,8 @@
 #include <optional>
 #include <string_view>
 
+namespace ame {
+
 [[nodiscard]] std::optional<pid_t> FindPidByProcessName(std::string_view processName);
 
 [[nodiscard]] std::optional<bool> IsProcessStopped(pid_t pid);
@@ -39,5 +41,7 @@ int DoWithProcessName(std::string_view processName, std::function<bool(pid_t)> o
 int FreezeProcessByName(std::string_view processName);
 
 int ResumeProcessByName(std::string_view processName);
+
+} // namespace ame
 
 #endif // __AME_PROCESS_H__

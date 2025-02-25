@@ -31,6 +31,8 @@
 #include <optional>
 #include <string>
 
+namespace ame {
+
 bool IsAreaBelongToPart(MemPart memPart, const std::string &vmAreaStr) {
     switch (memPart) {
         case MemPart::ALL: {
@@ -98,3 +100,5 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemPart memPart) {
     }
     return addrRangeList;
 }
+
+} // namespace ame

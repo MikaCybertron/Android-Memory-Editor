@@ -27,6 +27,8 @@
 #include <format>
 #include <iostream>
 
+namespace ame {
+
 enum class LogLevel {
     DEBUG,
     INFO,
@@ -40,13 +42,9 @@ constexpr int VALID_LOG_LEVEL_COUNT = int(LogLevel::OFF);
 
 class Logger {
 public:
-    [[nodiscard]] LogLevel GetLevel() const noexcept {
-        return _level;
-    }
+    [[nodiscard]] LogLevel GetLevel() const noexcept { return _level; }
 
-    void SetLevel(LogLevel level) noexcept {
-        _level = level;
-    }
+    void SetLevel(LogLevel level) noexcept { _level = level; }
 
     template <typename... Args>
     void Debug(std::format_string<Args...> format, Args &&...args) {
@@ -100,5 +98,7 @@ protected:
     LogLevel _level = LogLevel::DEBUG;
 
 } inline logger;
+
+} // namespace ame
 
 #endif // __AME_LOGGER_H__

@@ -32,6 +32,8 @@
 #include <utility>
 #include <vector>
 
+namespace ame {
+
 // Use uint64_t rather than uintptr_t/unsigned long.
 using AddrRangeList = std::vector<std::pair<uint64_t, uint64_t>>;
 using AddrList = std::vector<uint64_t>;
@@ -312,5 +314,7 @@ int WriteArrayAddress(pid_t pid, const AddrList &addrList, const std::vector<T> 
     }
     return successCount;
 }
+
+} // namespace ame
 
 #endif // __AME_MEMORY_H__

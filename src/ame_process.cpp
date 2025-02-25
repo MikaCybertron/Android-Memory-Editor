@@ -37,6 +37,8 @@
 #include <string_view>
 #include <thread>
 
+namespace ame {
+
 /**
  * @brief Find the PID of a process by its name.
  * @param [in] processName  Process name, which could be package name for Android app.
@@ -174,3 +176,5 @@ int FreezeProcessByName(std::string_view processName) {
 int ResumeProcessByName(std::string_view processName) {
     return DoWithProcessName(processName, ResumeProcessByPid);
 }
+
+} // namespace ame

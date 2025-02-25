@@ -23,6 +23,8 @@
 #include <format>
 #include <iostream>
 
+using namespace ame;
+
 int main() {
     // Init
     std::string packageName("com.popcap.pvz_na");
