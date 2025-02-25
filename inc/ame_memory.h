@@ -36,6 +36,9 @@
 using AddrRangeList = std::vector<std::pair<uint64_t, uint64_t>>;
 using AddrList = std::vector<uint64_t>;
 
+template <typename T>
+concept Arithmetic = std::is_arithmetic_v<T>;
+
 /**
  * @brief Memory partition.
  */
@@ -63,8 +66,7 @@ enum class MemPart {
  * @brief Find addresses that *address == value.
  * @tparam T  base data type, e.g. short, int, float, long.
  */
-template <typename T>
-    requires std::is_arithmetic_v<T>
+template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FindAddress(pid_t pid, MemPart memPart, T valueToFind) {
     auto addrRangeList = GetAddrRange(pid, memPart);
     if (!addrRangeList.has_value()) {
@@ -99,8 +101,7 @@ template <typename T>
  * @brief Find addresses that minValue <= *address <= maxValue.
  * @tparam T  base data type, e.g. short, int, float, long.
  */
-template <typename T>
-    requires std::is_arithmetic_v<T>
+template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FindAddressByRange(pid_t pid, MemPart memPart, T minValue, T maxValue) {
     if (minValue > maxValue) {
         logger.Error("Failed to find address: minValue > maxValue. ({} > {})", minValue, maxValue);
@@ -141,8 +142,7 @@ template <typename T>
  * @brief Find addresses that *((T *)address) == items[0], *((T *)address + 1) == items[1], ...
  * @tparam T  base data type, e.g. short, int, float, long.
  */
-template <typename T>
-    requires std::is_arithmetic_v<T>
+template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FindArrayAddress(pid_t pid, MemPart memPart, const std::vector<T> &items) {
     if (items.empty()) {
         logger.Error("Failed to find address: items is empty.");
@@ -183,8 +183,7 @@ template <typename T>
  * @brief Find addresses in list that *(address + offset) == value.
  * @tparam T  base data type, e.g. short, int, float, long.
  */
-template <typename T>
-    requires std::is_arithmetic_v<T>
+template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FilterAddrListByOffset(pid_t pid, const AddrList &listToFilter, T valueToFind, int64_t offset) {
     std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile(memPath, O_RDONLY);
@@ -212,8 +211,7 @@ template <typename T>
  * @brief Find addresses in list that *address == value.
  * @tparam T  base data type, e.g. short, int, float, long.
  */
-template <typename T>
-    requires std::is_arithmetic_v<T>
+template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FilterAddrList(pid_t pid, const AddrList &listToFilter, T value) {
     return FilterAddrListByOffset(pid, listToFilter, value, 0);
 }
@@ -223,8 +221,7 @@ template <typename T>
  * @brief Find addresses in list that minValue <= *address <= maxValue.
  * @tparam T  base data type, e.g. short, int, float, long.
  */
-template <typename T>
-    requires std::is_arithmetic_v<T>
+template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FilterAddrListByRange(pid_t pid, const AddrList &listToFilter, T minValue, T maxValue) {
     if (minValue > maxValue) {
         logger.Error("Failed to filter address: minValue > maxValue. ({} > {})", minValue, maxValue);
@@ -261,8 +258,7 @@ template <typename T>
  * @param [in] groupSize  The number of addresses to be written.
  * @return Count of successful writes.
  */
-template <typename T>
-    requires std::is_arithmetic_v<T>
+template <Arithmetic T>
 int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSize = 1) {
     if (groupSize < 1) {
         logger.Error("Failed to write meory: groupSize ({}) less than one.", groupSize);
@@ -294,8 +290,7 @@ int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSiz
  * @tparam T  base data type, e.g. short, int, float, long.
  * @return Count of successful writes.
  */
-template <typename T>
-    requires std::is_arithmetic_v<T>
+template <Arithmetic T>
 int WriteArrayAddress(pid_t pid, const AddrList &addrList, const std::vector<T> &items) {
     if (items.empty()) {
         logger.Error("Failed to write array address: items is empty.");
