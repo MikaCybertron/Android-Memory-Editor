@@ -31,6 +31,7 @@
 #include <format>
 #include <fstream>
 #include <functional>
+#include <memory>
 #include <optional>
 #include <regex>
 #include <string>
@@ -44,50 +45,48 @@ namespace ame {
  * @return The std::optional with value of the PID, or std::nullopt if it could not be found.
  */
 std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
-    DIR *procDir = opendir("/proc");
-    if (procDir == nullptr) {
-        LOG_ERROR("Failed to open [/proc]: {}.", std::strerror(errno));
+    constexpr char procPath[] = "/proc";
+    std::unique_ptr<DIR, decltype(&closedir)> procDir{opendir(procPath), &closedir};
+    if (!procDir) {
+        LOG_ERROR("Failed to open [{}].", procPath);
         return std::nullopt;
     }
 
     std::string cmdline;
-    std::optional<pid_t> result;
-    for (dirent *entry; (entry = readdir(procDir)) != nullptr;) {
+    for (dirent *entry; (entry = readdir(procDir.get())) != nullptr;) {
         if (entry->d_type != DT_DIR) {
             continue; // not a directory
         }
-        std::string_view dirname(entry->d_name);
+        std::string_view dirname{entry->d_name};
         if (dirname.find_first_not_of("0123456789") != std::string_view::npos) {
             continue; // not numeric name
         }
 
         std::string cmdlinePath = std::format("/proc/{}/cmdline", dirname);
-        std::ifstream cmdlineFile(cmdlinePath);
+        std::ifstream cmdlineFile{cmdlinePath};
         if (!cmdlineFile.is_open()) {
             LOG_ERROR("Failed to open [{}].", cmdlinePath);
             continue;
         }
         std::getline(cmdlineFile, cmdline, '\0');
         if (cmdline == processName) {
-            result = std::atoi(entry->d_name);
-            break;
+            return std::atoi(entry->d_name);
         }
     }
-    closedir(procDir);
-    return result;
+    return std::nullopt;
 }
 
 
 std::optional<bool> IsProcessStopped(pid_t pid) {
     std::string statusPath = std::format("/proc/{}/status", pid);
-    std::ifstream statusFile(statusPath);
+    std::ifstream statusFile{statusPath};
     if (!statusFile.is_open()) {
         LOG_ERROR("Failed to open [{}].", statusPath);
         return std::nullopt;
     }
 
     std::smatch matches;
-    static const std::regex stateRegex(R"re(^State:\s+(\S+)\s+\((.+)\)$)re");
+    static const std::regex stateRegex{R"re(^State:\s+(\S+)\s+\((.+)\)$)re"};
     for (std::string line; std::getline(statusFile, line);) {
         if (!std::regex_match(line, matches, stateRegex)) {
             continue;
