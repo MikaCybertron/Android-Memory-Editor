@@ -78,7 +78,7 @@ template <Arithmetic T>
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    FileWrapper memFile(memPath, O_RDONLY);
+    FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
         LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
         return std::nullopt;
@@ -118,7 +118,7 @@ template <Arithmetic T>
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    FileWrapper memFile(memPath, O_RDONLY);
+    FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
         LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
         return std::nullopt;
@@ -159,7 +159,7 @@ template <Arithmetic T>
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    FileWrapper memFile(memPath, O_RDONLY);
+    FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
         LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
         return std::nullopt;
@@ -189,7 +189,7 @@ template <Arithmetic T>
 template <Arithmetic T>
 [[nodiscard]] std::optional<AddrList> FilterAddrListByOffset(pid_t pid, const AddrList &listToFilter, T valueToFind, int64_t offset) {
     std::string memPath = std::format("/proc/{}/mem", pid);
-    FileWrapper memFile(memPath, O_RDONLY);
+    FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
         LOG_ERROR("Failed to filter address: failed to open [{}].", memPath);
         return std::nullopt;
@@ -232,7 +232,7 @@ template <Arithmetic T>
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    FileWrapper memFile(memPath, O_RDONLY);
+    FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
         LOG_ERROR("Failed to filter address: failed to open [{}].", memPath);
         return std::nullopt;
@@ -269,7 +269,7 @@ int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, int groupSiz
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    FileWrapper memFile(memPath, O_WRONLY);
+    FileWrapper memFile{memPath, O_WRONLY};
     if (!memFile.IsOpen()) {
         LOG_ERROR("Failed to write meory: failed to open [{}].", memPath);
         return -1;
@@ -301,7 +301,7 @@ int WriteArrayAddress(pid_t pid, const AddrList &addrList, const std::vector<T> 
     }
 
     std::string memPath = std::format("/proc/{}/mem", pid);
-    FileWrapper memFile(memPath, O_WRONLY);
+    FileWrapper memFile{memPath, O_WRONLY};
     if (!memFile.IsOpen()) {
         LOG_ERROR("Failed to write array address: failed to open [{}].", memPath);
         return -1;

@@ -20,6 +20,7 @@
 #ifndef __AME_LOGGER_H__
 #define __AME_LOGGER_H__
 
+#include <array>
 #include <chrono>
 #include <format>
 #include <iostream>
@@ -89,17 +90,17 @@ protected:
         std::string message = std::vformat(format, std::make_format_args(args...));
 
         // "\033[39m" -> default color
-        stream << std::format("{}[{:%T}][{}] [{}] {}\033[39m\n", _colorStr[(int)level], now, _levelChar[(int)level], location.function_name(), message);
+        stream << std::format("{}[{:%T}][{}] [{}] {}\033[39m\n", _colorStrs[(int)level], now, _levelChars[(int)level], location.function_name(), message);
     }
 
-    static constexpr std::string_view _colorStr[4] = {
+    static constexpr std::array<std::string_view, 4> _colorStrs = {
         "\033[32m", // green
         "",
         "\033[33m", // yellow
         "\033[31m", // red
     };
 
-    static constexpr char _levelChar[4] = {'D', 'I', 'W', 'E'};
+    static constexpr std::array<char, 4> _levelChars = {'D', 'I', 'W', 'E'};
 
     LogLevel _level = LogLevel::DEBUG;
 };

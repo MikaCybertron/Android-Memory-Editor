@@ -27,7 +27,7 @@ int main() {
     using namespace ame;
 
     // Init
-    std::string packageName("com.popcap.pvz_na");
+    std::string packageName{"com.popcap.pvz_na"};
     std::cout << "Package name: " << packageName << std::endl;
     if (auto pidOpt = FindPidByProcessName(packageName); pidOpt.has_value()) {
         std::cout << std::format("PID of {}: {}", packageName, *pidOpt) << std::endl;

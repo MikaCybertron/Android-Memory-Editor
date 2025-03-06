@@ -82,7 +82,7 @@ bool IsAreaBelongToPart(MemPart memPart, const std::string &vmAreaStr) {
 
 std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemPart memPart) {
     std::string mapsPath = std::format("/proc/{}/maps", pid);
-    std::ifstream mapsFile(mapsPath);
+    std::ifstream mapsFile{mapsPath};
     if (!mapsFile.is_open()) {
         LOG_ERROR("Failed to open [{}].", mapsPath);
         return std::nullopt;
@@ -96,7 +96,7 @@ std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemPart memPart) {
         size_t hyphenPos;
         uint64_t startAddr = std::stoull(line, &hyphenPos, 16);
         uint64_t endAddr = std::strtoull(&line[hyphenPos + 1], nullptr, 16);
-        addrRangeList.push_back({startAddr, endAddr});
+        addrRangeList.emplace_back(startAddr, endAddr);
     }
     return addrRangeList;
 }

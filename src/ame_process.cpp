@@ -23,11 +23,13 @@
 #include <dirent.h>
 #include <sys/types.h>
 
+#include <cctype>
 #include <cerrno>
 #include <csignal>
 #include <cstdlib>
 #include <cstring>
 
+#include <algorithm>
 #include <format>
 #include <fstream>
 #include <functional>
@@ -35,6 +37,7 @@
 #include <optional>
 #include <regex>
 #include <string>
+#include <string_view>
 #include <thread>
 
 namespace ame {
@@ -46,7 +49,7 @@ namespace ame {
  */
 std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
     constexpr char procPath[] = "/proc";
-    std::unique_ptr<DIR, decltype(&closedir)> procDir{opendir(procPath), &closedir};
+    std::unique_ptr<DIR, decltype(&closedir)> procDir{opendir(procPath), closedir};
     if (!procDir) {
         LOG_ERROR("Failed to open [{}].", procPath);
         return std::nullopt;
@@ -58,8 +61,8 @@ std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
             continue; // not a directory
         }
         std::string_view dirname{entry->d_name};
-        if (dirname.find_first_not_of("0123456789") != std::string_view::npos) {
-            continue; // not numeric name
+        if (!std::all_of(dirname.cbegin(), dirname.cend(), ::isdigit)) {
+            continue;
         }
 
         std::string cmdlinePath = std::format("/proc/{}/cmdline", dirname);
