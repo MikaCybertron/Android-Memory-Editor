@@ -48,7 +48,7 @@ namespace ame {
  * @return The std::optional with value of the PID, or std::nullopt if it could not be found.
  */
 std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
-    constexpr char procPath[] = "/proc";
+    static constexpr char procPath[] = "/proc";
     std::unique_ptr<DIR, decltype(&closedir)> procDir{opendir(procPath), closedir};
     if (!procDir) {
         LOG_ERROR("Failed to open [{}].", procPath);
@@ -98,11 +98,10 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
         if (stateCode == "T") {
             LOG_DEBUG("Process {} is in stopped state.", pid);
             return true;
-        } else {
-            std::string state = matches.str(2);
-            LOG_DEBUG("Process {} is not in stopped state: {} ({}).", pid, stateCode, state);
-            return false;
         }
+        std::string state = matches.str(2);
+        LOG_DEBUG("Process {} is not in stopped state: {} ({}).", pid, stateCode, state);
+        return false;
     }
     return std::nullopt;
 }

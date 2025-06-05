@@ -17,45 +17,44 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "ame_memory.h"
 #include "ame_process.h"
 
-#include <format>
 #include <iostream>
+#include <print>
 
 int main() {
     using namespace ame;
 
     // Init
     std::string packageName{"com.popcap.pvz_na"};
-    std::cout << "Package name: " << packageName << std::endl;
+    std::println("Package name: {}", packageName);
     if (auto pidOpt = FindPidByProcessName(packageName); pidOpt.has_value()) {
-        std::cout << std::format("PID of {}: {}", packageName, *pidOpt) << std::endl;
+        std::println("PID of {}: {}", packageName, *pidOpt);
     } else {
-        std::cout << std::format("PID of {} not find.", packageName) << std::endl;
+        std::println("PID of {} not find.", packageName);
     }
 
     // Test
     std::string option;
-    std::cout << "[1] Reset Package Name" << std::endl;
-    std::cout << "[2] Find PID" << std::endl;
-    std::cout << "[3] Freeze Process" << std::endl;
-    std::cout << "[4] Resume Process" << std::endl;
-    std::cout << "[5] Exit" << std::endl;
+    std::println("[1] Reset Package Name");
+    std::println("[2] Find PID");
+    std::println("[3] Freeze Process");
+    std::println("[4] Resume Process");
+    std::println("[5] Exit");
     while (true) {
-        std::cout << "Enter an option in [1, 2, 3, 4, 5]" << std::endl;
+        std::println("Enter an option in [1, 2, 3, 4, 5]");
         std::cin >> option;
 
         if (option == "1") {
-            std::cout << "Enter new package name:" << std::endl;
+            std::println("Enter new package name:");
             std::cin >> packageName;
-            std::cout << "New package name: " << packageName << std::endl;
+            std::println("New package name: {}", packageName);
 
         } else if (option == "2") {
             if (auto pidOpt = FindPidByProcessName(packageName); pidOpt.has_value()) {
-                std::cout << std::format("PID of {}: {}", packageName, *pidOpt) << std::endl;
+                std::println("PID of {}: {}", packageName, *pidOpt);
             } else {
-                std::cout << std::format("PID of {} not find.", packageName) << std::endl;
+                std::println("PID of {} not find.", packageName);
             }
 
         } else if (option == "3") {
@@ -68,7 +67,7 @@ int main() {
             break;
 
         } else {
-            std::cout << "Wrong option!" << std::endl;
+            std::println("Wrong option!");
         }
     }
 

@@ -24,6 +24,7 @@
 #include <chrono>
 #include <format>
 #include <iostream>
+#include <print>
 #include <source_location>
 
 #define LOG_DEBUG(...) ame::Logger::Instance().Debug(std::source_location::current(), __VA_ARGS__)
@@ -90,7 +91,7 @@ protected:
         std::string message = std::vformat(format, std::make_format_args(args...));
 
         // "\033[39m" -> default color
-        stream << std::format("{}[{:%T}][{}] [{}] {}\033[39m\n", _colorStrs[(int)level], now, _levelChars[(int)level], location.function_name(), message);
+        std::println(stream, "{}[{:%T}][{}] [{}] {}\033[39m", _colorStrs[(int)level], now, _levelChars[(int)level], location.function_name(), message);
     }
 
     static constexpr std::array<std::string_view, 4> _colorStrs = {
