@@ -9,10 +9,12 @@ string(APPEND CMAKE_CXX_FLAGS
     " -Werror=unused-result"
 )
 
-add_library(ame STATIC
+add_library(ame
     src/ame_memory.cpp
     src/ame_process.cpp
 )
 target_include_directories(ame PUBLIC include)
 
-add_subdirectory(test)
+if (TEST_AME)
+    add_subdirectory(test)
+endif ()

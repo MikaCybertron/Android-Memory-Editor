@@ -35,44 +35,31 @@ namespace ame {
 
 bool IsAreaBelongToPart(MemPart memPart, const std::string &vmAreaStr) {
     switch (memPart) {
-        case MemPart::ALL: {
+        case MemPart::ALL:
             return true;
-        }
-        case MemPart::ASHMEM: {
-            return vmAreaStr.find("/dev/ashmem/") != std::string::npos //
-                && vmAreaStr.find("dalvik") == std::string::npos;
-        }
-        case MemPart::A_ANONMYOURS: {
+        case MemPart::ASHMEM:
+            return vmAreaStr.contains("/dev/ashmem/") && !vmAreaStr.contains("dalvik");
+        case MemPart::A_ANONMYOURS:
             return vmAreaStr.length() < 42;
-        }
-        case MemPart::B_BAD: {
-            return vmAreaStr.find("/system/fonts") != std::string::npos;
-        }
-        case MemPart::CODE_SYSTEM: {
-            return vmAreaStr.find("/system") != std::string::npos;
-        }
-        case MemPart::C_ALLOC: {
-            return vmAreaStr.find("[anon:libc_malloc]") != std::string::npos;
-        }
-        case MemPart::C_BSS: {
-            return vmAreaStr.find("[anon:.bss]") != std::string::npos;
-        }
-        case MemPart::C_DATA: {
-            return vmAreaStr.find("/data/") != std::string::npos;
-        }
-        case MemPart::C_HEAP: {
-            return vmAreaStr.find("[heap]") != std::string::npos;
-        }
-        case MemPart::JAVA_HEAP: {
-            return vmAreaStr.find("/dev/ashmem/") != std::string::npos;
-        }
-        case MemPart::STACK: {
-            return vmAreaStr.find("[stack]") != std::string::npos;
-        }
-        case MemPart::V: {
-            return vmAreaStr.find("/dev/kgsl-3d0") != std::string::npos;
-        }
-        [[unlikely]] default: {
+        case MemPart::B_BAD:
+            return vmAreaStr.contains("/system/fonts");
+        case MemPart::CODE_SYSTEM:
+            return vmAreaStr.contains("/system");
+        case MemPart::C_ALLOC:
+            return vmAreaStr.contains("[anon:libc_malloc]");
+        case MemPart::C_BSS:
+            return vmAreaStr.contains("[anon:.bss]");
+        case MemPart::C_DATA:
+            return vmAreaStr.contains("/data/");
+        case MemPart::C_HEAP:
+            return vmAreaStr.contains("[heap]");
+        case MemPart::JAVA_HEAP:
+            return vmAreaStr.contains("/dev/ashmem/");
+        case MemPart::STACK:
+            return vmAreaStr.contains("[stack]");
+        case MemPart::V:
+            return vmAreaStr.contains("/dev/kgsl-3d0");
+        default: {
             assert(false && "invalid value for MemPart");
             return false;
         }

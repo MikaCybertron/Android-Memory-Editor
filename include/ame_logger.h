@@ -24,7 +24,6 @@
 #include <chrono>
 #include <format>
 #include <iostream>
-#include <print>
 #include <source_location>
 
 #define LOG_DEBUG(...) ame::Logger::Instance().Debug(std::source_location::current(), __VA_ARGS__)
@@ -49,7 +48,7 @@ public:
     Logger &operator=(const Logger &) = delete;
     Logger &operator=(Logger &&) = delete;
 
-    [[nodiscard]] [[gnu::visibility("default")]] static Logger &Instance() {
+    [[nodiscard, gnu::visibility("default")]] static Logger &Instance() {
         static Logger logger;
         return logger;
     }
