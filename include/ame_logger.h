@@ -53,9 +53,13 @@ public:
         return logger;
     }
 
-    [[nodiscard]] LogLevel Level() const noexcept { return _level; }
+    [[nodiscard]] LogLevel Level() const noexcept {
+        return _level;
+    }
 
-    void SetLevel(LogLevel level) noexcept { _level = level; }
+    void SetLevel(LogLevel level) noexcept {
+        _level = level;
+    }
 
     template <typename... Args>
     void Debug(std::source_location location, std::format_string<Args...> format, Args &&...args) {
@@ -86,11 +90,11 @@ protected:
         }
 
         std::ostream &stream = (level < LogLevel::ERROR) ? std::clog : std::cerr;
-        auto now = std::chrono::system_clock::now();
-        std::string message = std::vformat(format, std::make_format_args(args...));
+        const auto now = std::chrono::system_clock::now();
+        const std::string message = std::vformat(format, std::make_format_args(args...));
 
         // "\033[39m" -> default color
-        std::println(stream, "{}[{:%T}][{}] [{}] {}\033[39m", _colorStrs[(int)level], now, _levelChars[(int)level], location.function_name(), message);
+        std::println(stream, "{}[{:%T}][{}] [{}] {}\033[39m", _colorStrs[int(level)], now, _levelChars[int(level)], location.function_name(), message);
     }
 
     static constexpr std::array<std::string_view, 4> _colorStrs = {

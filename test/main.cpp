@@ -22,19 +22,19 @@
 #include <iostream>
 #include <print>
 
-int main() {
+int main(int argc, char* argv[]) {
     using namespace ame;
 
-    // Init
-    std::string packageName{"com.popcap.pvz_na"};
-    std::println("Package name: {}", packageName);
-    if (auto pidOpt = FindPidByProcessName(packageName); pidOpt.has_value()) {
-        std::println("PID of {}: {}", packageName, *pidOpt);
+    // init
+    std::string packageName = (argc > 1) ? argv[1] : "";
+    std::println("Package name: '{}'", packageName);
+    if (const auto pidOpt = FindPidByProcessName(packageName); pidOpt.has_value()) {
+        std::println("PID of '{}': {}", packageName, *pidOpt);
     } else {
-        std::println("PID of {} not find.", packageName);
+        std::println("PID of '{}' not find.", packageName);
     }
 
-    // Test
+    // test
     std::string option;
     std::println("[1] Reset Package Name");
     std::println("[2] Find PID");
@@ -48,13 +48,13 @@ int main() {
         if (option == "1") {
             std::println("Enter new package name:");
             std::cin >> packageName;
-            std::println("New package name: {}", packageName);
+            std::println("New package name: '{}'", packageName);
 
         } else if (option == "2") {
             if (auto pidOpt = FindPidByProcessName(packageName); pidOpt.has_value()) {
-                std::println("PID of {}: {}", packageName, *pidOpt);
+                std::println("PID of '{}': {}", packageName, *pidOpt);
             } else {
-                std::println("PID of {} not find.", packageName);
+                std::println("PID of '{}' not find.", packageName);
             }
 
         } else if (option == "3") {

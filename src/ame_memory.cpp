@@ -28,7 +28,6 @@
 
 #include <format>
 #include <fstream>
-#include <optional>
 #include <string>
 
 namespace ame {
@@ -67,25 +66,26 @@ bool IsAreaBelongToPart(MemPart memPart, const std::string &vmAreaStr) {
 }
 
 
-std::optional<AddrRangeList> GetAddrRange(pid_t pid, MemPart memPart) {
-    std::string mapsPath = std::format("/proc/{}/maps", pid);
+AddrRangeList GetAddrRange(pid_t pid, MemPart memPart) {
+    AddrRangeList result;
+
+    const std::string mapsPath = std::format("/proc/{}/maps", pid);
     std::ifstream mapsFile{mapsPath};
     if (!mapsFile.is_open()) {
         LOG_ERROR("Failed to open [{}].", mapsPath);
-        return std::nullopt;
+        return result;
     }
 
-    AddrRangeList addrRangeList;
     for (std::string line; std::getline(mapsFile, line);) {
         if (line.find("rw") > 27 || !IsAreaBelongToPart(memPart, line)) {
             continue; // 27 -> the max columns of vm_flags
         }
-        size_t hyphenPos;
-        uint64_t startAddr = std::stoull(line, &hyphenPos, 16);
-        uint64_t endAddr = std::strtoull(&line[hyphenPos + 1], nullptr, 16);
-        addrRangeList.emplace_back(startAddr, endAddr);
+        std::size_t hyphenPos;
+        const std::uint64_t startAddr = std::stoull(line, &hyphenPos, 16);
+        const std::uint64_t endAddr = std::strtoull(&line[hyphenPos + 1], nullptr, 16);
+        result.emplace_back(startAddr, endAddr);
     }
-    return addrRangeList;
+    return result;
 }
 
 } // namespace ame

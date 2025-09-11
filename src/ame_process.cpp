@@ -37,7 +37,6 @@
 #include <optional>
 #include <regex>
 #include <string>
-#include <string_view>
 #include <thread>
 
 namespace ame {
@@ -49,7 +48,7 @@ namespace ame {
  */
 std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
     static constexpr char procPath[] = "/proc";
-    std::unique_ptr<DIR, decltype(&closedir)> procDir{opendir(procPath), closedir};
+    const std::unique_ptr<DIR, decltype(&closedir)> procDir{opendir(procPath), &closedir};
     if (!procDir) {
         LOG_ERROR("Failed to open [{}].", procPath);
         return std::nullopt;
@@ -60,12 +59,12 @@ std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
         if (entry->d_type != DT_DIR) {
             continue; // not a directory
         }
-        std::string_view dirname{entry->d_name};
-        if (!std::all_of(dirname.cbegin(), dirname.cend(), ::isdigit)) {
+        const std::string_view dirname{entry->d_name};
+        if (!std::all_of(dirname.cbegin(), dirname.cend(), &::isdigit)) {
             continue;
         }
 
-        std::string cmdlinePath = std::format("/proc/{}/cmdline", dirname);
+        const std::string cmdlinePath = std::format("/proc/{}/cmdline", dirname);
         std::ifstream cmdlineFile{cmdlinePath};
         if (!cmdlineFile.is_open()) {
             LOG_ERROR("Failed to open [{}].", cmdlinePath);
@@ -73,7 +72,7 @@ std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
         }
         std::getline(cmdlineFile, cmdline, '\0');
         if (cmdline == processName) {
-            return std::atoi(entry->d_name);
+            return std::atoi(dirname.data());
         }
     }
     return std::nullopt;
@@ -81,7 +80,7 @@ std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
 
 
 std::optional<bool> IsProcessStopped(pid_t pid) {
-    std::string statusPath = std::format("/proc/{}/status", pid);
+    const std::string statusPath = std::format("/proc/{}/status", pid);
     std::ifstream statusFile{statusPath};
     if (!statusFile.is_open()) {
         LOG_ERROR("Failed to open [{}].", statusPath);
@@ -94,12 +93,12 @@ std::optional<bool> IsProcessStopped(pid_t pid) {
         if (!std::regex_match(line, matches, stateRegex)) {
             continue;
         }
-        std::string stateCode = matches.str(1);
+        const std::string stateCode = matches.str(1);
         if (stateCode == "T") {
             LOG_DEBUG("Process {} is in stopped state.", pid);
             return true;
         }
-        std::string state = matches.str(2);
+        const std::string state = matches.str(2);
         LOG_DEBUG("Process {} is not in stopped state: {} ({}).", pid, stateCode, state);
         return false;
     }
@@ -117,7 +116,7 @@ bool FreezeProcessByPid(pid_t pid) {
     LOG_DEBUG("Succeeded in sending SIGSTOP to process {}.", pid);
 
     std::this_thread::sleep_for(10ms); // wait for process status
-    auto isStopped = IsProcessStopped(pid);
+    const auto isStopped = IsProcessStopped(pid);
     if (!isStopped.has_value()) {
         LOG_ERROR("Failed to get state of process {}.", pid);
         return false;
@@ -141,7 +140,7 @@ bool ResumeProcessByPid(pid_t pid) {
     LOG_DEBUG("Succeeded in sending SIGCONT to process {}.", pid);
 
     std::this_thread::sleep_for(10ms); // wait for process status
-    auto isStopped = IsProcessStopped(pid);
+    const auto isStopped = IsProcessStopped(pid);
     if (!isStopped.has_value()) {
         LOG_ERROR("Failed to get state of process {}.", pid);
         return false;
@@ -161,7 +160,7 @@ bool ResumeProcessByPid(pid_t pid) {
  * @retval -2  The operation failed.
  */
 int DoWithProcessName(std::string_view processName, std::function<bool(pid_t)> operation) {
-    auto pidOpt = FindPidByProcessName(processName);
+    const auto pidOpt = FindPidByProcessName(processName);
     if (!pidOpt.has_value()) {
         LOG_ERROR("Cannot find process [{}].", processName);
         return -1;
@@ -170,11 +169,11 @@ int DoWithProcessName(std::string_view processName, std::function<bool(pid_t)> o
 }
 
 int FreezeProcessByName(std::string_view processName) {
-    return DoWithProcessName(processName, FreezeProcessByPid);
+    return DoWithProcessName(processName, &FreezeProcessByPid);
 }
 
 int ResumeProcessByName(std::string_view processName) {
-    return DoWithProcessName(processName, ResumeProcessByPid);
+    return DoWithProcessName(processName, &ResumeProcessByPid);
 }
 
 } // namespace ame
