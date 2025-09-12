@@ -48,14 +48,14 @@ namespace ame {
  */
 std::optional<pid_t> FindPidByProcessName(std::string_view processName) {
     static constexpr char procPath[] = "/proc";
-    const std::unique_ptr<DIR, decltype(&closedir)> procDir{opendir(procPath), &closedir};
+    std::unique_ptr<DIR, decltype(&closedir)> procDir{opendir(procPath), &closedir};
     if (!procDir) {
         LOG_ERROR("Failed to open [{}].", procPath);
         return std::nullopt;
     }
 
     std::string cmdline;
-    for (dirent *entry; (entry = readdir(procDir.get())) != nullptr;) {
+    for (const dirent *entry; (entry = readdir(procDir.get())) != nullptr;) {
         if (entry->d_type != DT_DIR) {
             continue; // not a directory
         }
@@ -162,7 +162,7 @@ bool ResumeProcessByPid(pid_t pid) {
 int DoWithProcessName(std::string_view processName, std::function<bool(pid_t)> operation) {
     const auto pidOpt = FindPidByProcessName(processName);
     if (!pidOpt.has_value()) {
-        LOG_ERROR("Cannot find process [{}].", processName);
+        LOG_ERROR("Cannot find process '{}'.", processName);
         return -1;
     }
     return operation(*pidOpt) ? 0 : -2;

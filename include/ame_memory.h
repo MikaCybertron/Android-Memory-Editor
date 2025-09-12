@@ -73,14 +73,14 @@ template <Arithmetic T>
 
     const AddrRangeList addrRangeList = GetAddrRange(pid, memPart);
     if (addrRangeList.empty()) {
-        LOG_ERROR("Failed to find address: failed to get address range.");
+        LOG_ERROR("Failed to get address range.");
         return result;
     }
 
     const std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
-        LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to open [{}].", memPath);
         return result;
     }
 
@@ -108,20 +108,20 @@ template <Arithmetic T>
     AddrList result;
 
     if (minValue > maxValue) {
-        LOG_ERROR("Failed to find address: minValue > maxValue. ({} > {})", minValue, maxValue);
+        LOG_ERROR("minValue ({}) > maxValue ({})", minValue, maxValue);
         return result;
     }
 
     const AddrRangeList addrRangeList = GetAddrRange(pid, memPart);
     if (addrRangeList.empty()) {
-        LOG_ERROR("Failed to find address: failed to get address range.");
+        LOG_ERROR("Failed to get address range.");
         return result;
     }
 
     const std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
-        LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to open [{}].", memPath);
         return result;
     }
 
@@ -150,20 +150,20 @@ template <Arithmetic T>
     AddrList result;
 
     if (values.empty()) {
-        LOG_ERROR("Failed to find address: values is empty.");
+        LOG_ERROR("values is empty.");
         return result;
     }
 
     const AddrRangeList addrRangeList = GetAddrRange(pid, memPart);
     if (addrRangeList.empty()) {
-        LOG_ERROR("Failed to find address: failed to get address range.");
+        LOG_ERROR("Failed to get address range.");
         return result;
     }
 
     const std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
-        LOG_ERROR("Failed to find address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to open [{}].", memPath);
         return result;
     }
 
@@ -194,7 +194,7 @@ template <Arithmetic T>
     const std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
-        LOG_ERROR("Failed to filter address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to open [{}].", memPath);
         return result;
     }
 
@@ -231,14 +231,14 @@ template <Arithmetic T>
     AddrList result;
 
     if (minValue > maxValue) {
-        LOG_ERROR("Failed to filter address: minValue > maxValue. ({} > {})", minValue, maxValue);
+        LOG_ERROR("minValue ({}) > maxValue ({})", minValue, maxValue);
         return result;
     }
 
     const std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile{memPath, O_RDONLY};
     if (!memFile.IsOpen()) {
-        LOG_ERROR("Failed to filter address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to open [{}].", memPath);
         return result;
     }
 
@@ -267,14 +267,14 @@ template <Arithmetic T>
 template <Arithmetic T>
 int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, std::size_t groupSize = 1) {
     if (groupSize == 0) {
-        LOG_ERROR("Failed to write meory: groupSize is zero.");
+        LOG_ERROR("groupSize is zero.");
         return -1;
     }
 
     const std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile{memPath, O_WRONLY};
     if (!memFile.IsOpen()) {
-        LOG_ERROR("Failed to write meory: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to open [{}].", memPath);
         return -1;
     }
 
@@ -297,14 +297,14 @@ int WriteAddressGroup(pid_t pid, const AddrList &addrList, T value, std::size_t 
 template <Arithmetic T>
 int WriteArrayAddress(pid_t pid, const AddrList &addrList, const std::vector<T> &values) {
     if (values.empty()) {
-        LOG_ERROR("Failed to write array address: values is empty.");
+        LOG_ERROR("values is empty.");
         return -1;
     }
 
     const std::string memPath = std::format("/proc/{}/mem", pid);
     FileWrapper memFile{memPath, O_WRONLY};
     if (!memFile.IsOpen()) {
-        LOG_ERROR("Failed to write array address: failed to open [{}].", memPath);
+        LOG_ERROR("Failed to open [{}].", memPath);
         return -1;
     }
 
