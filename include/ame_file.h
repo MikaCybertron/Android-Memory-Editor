@@ -17,8 +17,8 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __AME_FILE_H__
-#define __AME_FILE_H__
+#ifndef AME_FILE_H
+#define AME_FILE_H
 
 #include <fcntl.h>
 #include <unistd.h>
@@ -83,4 +83,4 @@ protected:
 
 } // namespace ame
 
-#endif // __AME_FILE_H__
+#endif // AME_FILE_H

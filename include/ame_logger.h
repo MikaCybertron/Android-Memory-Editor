@@ -17,8 +17,8 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __AME_LOGGER_H__
-#define __AME_LOGGER_H__
+#ifndef AME_LOGGER_H
+#define AME_LOGGER_H
 
 #include <array>
 #include <chrono>
@@ -111,4 +111,4 @@ protected:
 
 } // namespace ame
 
-#endif // __AME_LOGGER_H__
+#endif // AME_LOGGER_H

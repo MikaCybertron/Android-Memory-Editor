@@ -17,8 +17,8 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __AME_MEMORY_H__
-#define __AME_MEMORY_H__
+#ifndef AME_MEMORY_H
+#define AME_MEMORY_H
 
 #include "ame_file.h"
 #include "ame_logger.h"
@@ -319,4 +319,4 @@ int WriteArrayAddress(pid_t pid, const AddrList &addrList, const std::vector<T> 
 
 } // namespace ame
 
-#endif // __AME_MEMORY_H__
+#endif // AME_MEMORY_H

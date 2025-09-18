@@ -17,8 +17,8 @@
  * Android-Memory-Editor.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __AME_PROCESS_H__
-#define __AME_PROCESS_H__
+#ifndef AME_PROCESS_H
+#define AME_PROCESS_H
 
 #include <sys/types.h>
 
@@ -44,4 +44,4 @@ int ResumeProcessByName(std::string_view processName);
 
 } // namespace ame
 
-#endif // __AME_PROCESS_H__
+#endif // AME_PROCESS_H
