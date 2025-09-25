@@ -26,11 +26,6 @@
 #include <iostream>
 #include <source_location>
 
-#define LOG_DEBUG(...) ame::Logger::Instance().Debug(std::source_location::current(), __VA_ARGS__)
-#define LOG_INFO(...) ame::Logger::Instance().Info(std::source_location::current(), __VA_ARGS__)
-#define LOG_WARN(...) ame::Logger::Instance().Warn(std::source_location::current(), __VA_ARGS__)
-#define LOG_ERROR(...) ame::Logger::Instance().Error(std::source_location::current(), __VA_ARGS__)
-
 namespace ame {
 
 enum class LogLevel {
@@ -43,17 +38,17 @@ enum class LogLevel {
 
 class Logger {
 public:
-    Logger(const Logger &) = delete;
-    Logger(Logger &&) = delete;
-    Logger &operator=(const Logger &) = delete;
-    Logger &operator=(Logger &&) = delete;
-
     [[nodiscard, gnu::visibility("default")]] static Logger &Instance() {
         static Logger logger;
         return logger;
     }
 
-    [[nodiscard]] LogLevel Level() const noexcept {
+    Logger(const Logger &) = delete;
+    Logger(Logger &&) = delete;
+    Logger &operator=(const Logger &) = delete;
+    Logger &operator=(Logger &&) = delete;
+
+    [[nodiscard]] LogLevel GetLevel() const noexcept {
         return _level;
     }
 
@@ -83,6 +78,7 @@ public:
 
 protected:
     Logger() = default;
+    ~Logger() = default;
 
     void Output(std::source_location location, LogLevel level, std::string_view format, auto &&...args) {
         if (level < _level) {
@@ -110,5 +106,10 @@ protected:
 };
 
 } // namespace ame
+
+#define LOG_DEBUG(...) ame::Logger::Instance().Debug(std::source_location::current(), __VA_ARGS__)
+#define LOG_INFO(...) ame::Logger::Instance().Info(std::source_location::current(), __VA_ARGS__)
+#define LOG_WARN(...) ame::Logger::Instance().Warn(std::source_location::current(), __VA_ARGS__)
+#define LOG_ERROR(...) ame::Logger::Instance().Error(std::source_location::current(), __VA_ARGS__)
 
 #endif // AME_LOGGER_H

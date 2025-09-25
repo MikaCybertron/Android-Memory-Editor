@@ -23,6 +23,8 @@
 #include <fcntl.h>
 #include <unistd.h>
 
+#include <cstddef>
+
 #include <string_view>
 #include <utility>
 
@@ -37,22 +39,23 @@ public:
         : FileWrapper{file, O_RDWR} {}
 
     FileWrapper(const FileWrapper &) = delete;
-    FileWrapper &operator=(const FileWrapper &) = delete;
 
     FileWrapper(FileWrapper &&other) noexcept
         : _fd{other._fd} {
         other._fd = -1;
     };
 
-    FileWrapper &operator=(FileWrapper &&other) noexcept {
-        std::swap(_fd, other._fd);
-        return *this;
-    }
-
     ~FileWrapper() {
         if (IsOpen()) {
             close(_fd);
         }
+    }
+
+    FileWrapper &operator=(const FileWrapper &) = delete;
+
+    FileWrapper &operator=(FileWrapper &&other) noexcept {
+        std::swap(_fd, other._fd);
+        return *this;
     }
 
     [[nodiscard]] bool IsOpen() const noexcept {
